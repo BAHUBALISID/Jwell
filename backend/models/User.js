@@ -43,6 +43,9 @@ const userSchema = new mongoose.Schema({
   }
 });
 
+// Remove any userId field that might have been causing issues
+userSchema.index({ username: 1 }, { unique: true });
+
 // Hash password before saving
 userSchema.pre('save', async function(next) {
   if (!this.isModified('password')) return next();
