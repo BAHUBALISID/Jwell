@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shri Mahakaleshwar Jewellers - Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="shop-info">
+                <h1 class="shop-name">Shri Mahakaleshwar Jewellers</h1>
+                <p class="shop-address">Anisabad, Patna, Bihar | GSTIN: 10AABCU9603R1Z1</p>
+                <p class="shop-contact">Phone: 0612-XXXXXX | Email: mahakaleshwarjewellers@gmail.com</p>
+            </div>
+            <div class="user-info">
+                <span id="userName">Admin</span>
+                <button onclick="logout()" class="btn-logout">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="sidebar">
+            <ul class="nav-menu">
+                <li class="nav-item active">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="billing.html" class="nav-link">
+                        <i class="fas fa-receipt"></i> New Bill
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="exchange.html" class="nav-link">
+                        <i class="fas fa-exchange-alt"></i> Exchange
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="admin.html" class="nav-link">
+                        <i class="fas fa-cog"></i> Rates & Settings
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="reports.html" class="nav-link">
+                        <i class="fas fa-chart-bar"></i> Reports
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" onclick="reprintBill()">
+                        <i class="fas fa-print"></i> Reprint Bill
+                    </a>
+                </li>
+            </ul>
+            
+            <div class="rate-display">
+                <h4><i class="fas fa-chart-line"></i> Current Rates</h4>
+                <div id="currentRates">
+                    <p>Loading rates...</p>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="dashboard-header">
+                <h2><i class="fas fa-tachometer-alt"></i> Dashboard</h2>
+                <div class="date-time" id="currentDateTime"></div>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="stats-grid">
+                <div class="stat-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <div class="stat-icon">
+                        <i class="fas fa-rupee-sign"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="todaySales">₹0</h3>
+                        <p>Today's Sales</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                    <div class="stat-icon">
+                        <i class="fas fa-exchange-alt"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="todayBills">0</h3>
+                        <p>Today's Bills</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                    <div class="stat-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="todayCustomers">0</h3>
+                        <p>Today's Customers</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                    <div class="stat-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="pendingBills">0</h3>
+                        <p>Pending Payments</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                <h3><i class="fas fa-bolt"></i> Quick Actions</h3>
+                <div class="action-grid">
+                    <button onclick="window.location.href='billing.html'" class="action-btn">
+                        <i class="fas fa-plus-circle"></i>
+                        <span>New Sale Bill</span>
+                    </button>
+                    <button onclick="window.location.href='exchange.html'" class="action-btn">
+                        <i class="fas fa-exchange-alt"></i>
+                        <span>Exchange Bill</span>
+                    </button>
+                    <button onclick="window.location.href='admin.html'" class="action-btn">
+                        <i class="fas fa-edit"></i>
+                        <span>Update Rates</span>
+                    </button>
+                    <button onclick="window.location.href='reports.html'" class="action-btn">
+                        <i class="fas fa-file-invoice"></i>
+                        <span>Daily Report</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Recent Bills -->
+            <div class="recent-bills">
+                <h3><i class="fas fa-history"></i> Recent Bills</h3>
+                <div class="table-container">
+                    <table id="recentBillsTable">
+                        <thead>
+                            <tr>
+                                <th>Bill No.</th>
+                                <th>Customer</th>
+                                <th>Date</th>
+                                <th>Amount</th>
+                                <th>Type</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Bills will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>© 2024 Shri Mahakaleshwar Jewellers. All rights reserved.</p>
+            <p>Jewellery Billing System v1.0</p>
+        </footer>
+    </div>
+
+    <!-- Modal for Bill Reprint -->
+    <div id="reprintModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('reprintModal')">&times;</span>
+            <h3><i class="fas fa-print"></i> Reprint Bill</h3>
+            <div class="form-group">
+                <label for="billNumberSearch">Enter Bill Number:</label>
+                <input type="text" id="billNumberSearch" placeholder="SMJ-YYYYMMDD-XXXX" class="form-control">
+            </div>
+            <div class="form-group">
+                <button onclick="searchBill()" class="btn-primary">
+                    <i class="fas fa-search"></i> Search Bill
+                </button>
+            </div>
+            <div id="billSearchResult"></div>
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
