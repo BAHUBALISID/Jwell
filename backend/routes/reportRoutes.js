@@ -1,31 +1,16 @@
 const express = require('express');
 const router = express.Router();
-const { 
-  getDailyReport, 
-  getMonthlyReport, 
-  getCustomerReport, 
-  getSalesSummary 
-} = require('../controllers/reportController');
-const { auth } = require('../middleware/auth');
+const reportController = require('../controllers/reportController');
+const { auth, adminOnly } = require('../middleware/auth');
 
-// @route   GET /api/reports/daily
-// @desc    Get daily sales report
-// @access  Private
-router.get('/daily', auth, getDailyReport);
+// All report routes are protected
+router.use(auth);
 
-// @route   GET /api/reports/monthly
-// @desc    Get monthly sales report
-// @access  Private
-router.get('/monthly', auth, getMonthlyReport);
-
-// @route   GET /api/reports/customer
-// @desc    Get customer purchase history
-// @access  Private
-router.get('/customer', auth, getCustomerReport);
-
-// @route   GET /api/reports/sales-summary
-// @desc    Get sales summary for date range
-// @access  Private
-router.get('/sales-summary', auth, getSalesSummary);
+// Sales reports (admin only)
+router.get('/sales', adminOnly, reportController.getSalesReport);
+router.get('/ai-analysis', adminOnly, reportController.getAIAnalysis);
+router.get('/customer', adminOnly, reportController.getCustomerReport);
+router.get('/stock', adminOnly, reportController.getStockReport);
+router.get('/gst', adminOnly, reportController.getGSTReport);
 
 module.exports = router;
