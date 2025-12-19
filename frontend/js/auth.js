@@ -1,27 +1,20 @@
-// Authentication Management
-class AuthManager {
+// Authentication module
+
+class Auth {
     constructor() {
-        this.token = localStorage.getItem('jwt_token');
+        this.token = localStorage.getItem('token');
         this.user = JSON.parse(localStorage.getItem('user') || 'null');
-        this.apiBase = window.location.origin.includes('localhost') 
-            ? 'http://localhost:5000/api' 
-            : '/api';
+        this.apiBase = 'http://localhost:5000/api';
     }
 
-    // Check if user is authenticated
-    isAuthenticated() {
-        return !!this.token && !!this.user;
-    }
-
-    // Login function
-    async login(username, password) {
+    async login(email, password) {
         try {
             const response = await fetch(`${this.apiBase}/auth/login`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ username, password })
+                body: JSON.stringify({ email, password })
             });
 
             const data = await response.json();
@@ -30,7 +23,7 @@ class AuthManager {
                 this.token = data.token;
                 this.user = data.user;
                 
-                localStorage.setItem('jwt_token', data.token);
+                localStorage.setItem('token', data.token);
                 localStorage.setItem('user', JSON.stringify(data.user));
                 
                 return { success: true, user: data.user };
@@ -43,151 +36,200 @@ class AuthManager {
         }
     }
 
-    // Logout function
+    async register(userData) {
+        try {
+            const response = await fetch(`${this.apiBase}/auth/register`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(userData)
+            });
+
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error('Registration error:', error);
+            return { success: false, message: 'Network error. Please try again.' };
+        }
+    }
+
     logout() {
         this.token = null;
         this.user = null;
-        localStorage.removeItem('jwt_token');
+        localStorage.removeItem('token');
         localStorage.removeItem('user');
         window.location.href = 'login.html';
     }
 
-    // Get auth headers for API calls
-    getAuthHeaders() {
-        return {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${this.token}`
-        };
+    isAuthenticated() {
+        return !!this.token;
     }
 
-    // Check authentication on page load
-    checkAuth(redirectToLogin = true) {
-        if (!this.isAuthenticated() && redirectToLogin) {
-            window.location.href = 'login.html';
-            return false;
-        }
-        return this.isAuthenticated();
+    isAdmin() {
+        return this.user && this.user.role === 'admin';
     }
 
-    // Update user profile
+    isStaff() {
+        return this.user && (this.user.role === 'staff' || this.user.role === 'admin');
+    }
+
+    getToken() {
+        return this.token;
+    }
+
+    getUser() {
+        return this.user;
+    }
+
     async updateProfile(profileData) {
         try {
             const response = await fetch(`${this.apiBase}/auth/profile`, {
                 method: 'PUT',
-                headers: this.getAuthHeaders(),
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${this.token}`
+                },
                 body: JSON.stringify(profileData)
             });
 
-            return await response.json();
+            const data = await response.json();
+            
+            if (data.success) {
+                this.user = data.user;
+                localStorage.setItem('user', JSON.stringify(data.user));
+            }
+            
+            return data;
         } catch (error) {
             console.error('Update profile error:', error);
             return { success: false, message: 'Network error' };
         }
     }
+
+    async changePassword(currentPassword, newPassword) {
+        try {
+            const response = await fetch(`${this.apiBase}/auth/change-password`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${this.token}`
+                },
+                body: JSON.stringify({ currentPassword, newPassword })
+            });
+
+            return await response.json();
+        } catch (error) {
+            console.error('Change password error:', error);
+            return { success: false, message: 'Network error' };
+        }
+    }
 }
 
-// Initialize auth manager
-const authManager = new AuthManager();
+// Initialize auth instance
+const auth = new Auth();
 
-// Login form handler
-function handleLogin(event) {
-    event.preventDefault();
-    
-    const username = document.getElementById('username').value;
-    const password = document.getElementById('password').value;
-    const errorDiv = document.getElementById('loginError');
-    const submitBtn = document.querySelector('#loginForm button[type="submit"]');
-    const originalBtnText = submitBtn.innerHTML;
-    
-    errorDiv.style.display = 'none';
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in...';
-    submitBtn.disabled = true;
-    
-    authManager.login(username, password).then(result => {
+// DOM ready function for login page
+if (document.getElementById('loginForm')) {
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        
+        const loginBtn = document.getElementById('loginBtn');
+        const originalText = loginBtn.innerHTML;
+        loginBtn.innerHTML = '<span class="spinner"></span> Logging in...';
+        loginBtn.disabled = true;
+        
+        const result = await auth.login(email, password);
+        
         if (result.success) {
-            // Redirect to dashboard
-            window.location.href = 'index.html';
+            showAlert('success', 'Login successful! Redirecting...');
+            
+            // Redirect based on role
+            setTimeout(() => {
+                if (result.user.role === 'admin') {
+                    window.location.href = 'admin.html';
+                } else {
+                    window.location.href = 'billing.html';
+                }
+            }, 1000);
         } else {
-            errorDiv.textContent = result.message || 'Invalid credentials';
-            errorDiv.style.display = 'block';
-            submitBtn.innerHTML = originalBtnText;
-            submitBtn.disabled = false;
+            showAlert('danger', result.message);
+            loginBtn.innerHTML = originalText;
+            loginBtn.disabled = false;
         }
     });
 }
 
-// Logout function
-function logout() {
-    if (confirm('Are you sure you want to logout?')) {
-        authManager.logout();
-    }
+// Utility functions
+function showAlert(type, message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type}`;
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="close" onclick="this.parentElement.remove()">&times;</button>
+    `;
+    
+    const container = document.querySelector('.auth-box') || document.querySelector('.main-container');
+    container.insertBefore(alertDiv, container.firstChild);
+    
+    setTimeout(() => alertDiv.remove(), 5000);
 }
 
-// Display user info on pages
-function displayUserInfo() {
-    if (authManager.checkAuth(false)) {
-        const userNameElement = document.getElementById('userName');
-        if (userNameElement) {
-            userNameElement.textContent = authManager.user.username.split('@')[0];
+// Check authentication on page load
+document.addEventListener('DOMContentLoaded', () => {
+    const publicPages = ['login.html', 'index.html'];
+    const currentPage = window.location.pathname.split('/').pop();
+    
+    // Redirect to login if not authenticated
+    if (!publicPages.includes(currentPage) && !auth.isAuthenticated()) {
+        window.location.href = 'login.html';
+        return;
+    }
+    
+    // Redirect away from login if already authenticated
+    if (currentPage === 'login.html' && auth.isAuthenticated()) {
+        if (auth.isAdmin()) {
+            window.location.href = 'admin.html';
+        } else {
+            window.location.href = 'billing.html';
         }
-    }
-}
-
-// Protected page loader
-function loadProtectedPage() {
-    if (!authManager.checkAuth()) {
-        return false;
+        return;
     }
     
-    displayUserInfo();
-    return true;
-}
-
-// Update shop details
-async function updateShopDetails() {
-    const shopName = document.getElementById('shopName').value;
-    const address = document.getElementById('address').value;
-    const gstin = document.getElementById('gstin').value;
-    const phone = document.getElementById('phone').value;
-    const email = document.getElementById('email').value;
-    
-    const result = await authManager.updateProfile({
-        shopName,
-        address,
-        gstin,
-        phone,
-        email
-    });
-    
-    if (result.success) {
-        alert('Shop details updated successfully!');
-        // Update local storage
-        localStorage.setItem('user', JSON.stringify(result.user));
-    } else {
-        alert('Error updating shop details: ' + result.message);
+    // Show user info in navbar
+    if (auth.isAuthenticated()) {
+        const userInfoElements = document.querySelectorAll('.user-info');
+        userInfoElements.forEach(element => {
+            const user = auth.getUser();
+            element.innerHTML = `
+                <div class="user-avatar">${user.name.charAt(0)}</div>
+                <div>
+                    <div class="user-name">${user.name}</div>
+                    <div class="user-role">${user.role}</div>
+                </div>
+                <button class="btn btn-outline btn-sm" onclick="auth.logout()">Logout</button>
+            `;
+        });
     }
-}
-
-// Initialize login page
-if (window.location.pathname.includes('login.html')) {
-    document.addEventListener('DOMContentLoaded', () => {
-        // If already logged in, redirect to dashboard
-        if (authManager.isAuthenticated()) {
-            window.location.href = 'index.html';
+    
+    // Show/hide elements based on role
+    if (auth.isAuthenticated()) {
+        // Hide admin links from non-admin users
+        if (!auth.isAdmin()) {
+            const adminLinks = document.querySelectorAll('[data-role="admin"]');
+            adminLinks.forEach(link => link.style.display = 'none');
         }
         
-        const loginForm = document.getElementById('loginForm');
-        if (loginForm) {
-            loginForm.addEventListener('submit', handleLogin);
+        // Hide staff links from viewers
+        if (auth.getUser().role === 'viewer') {
+            const staffLinks = document.querySelectorAll('[data-role="staff"]');
+            staffLinks.forEach(link => link.style.display = 'none');
         }
-        
-        // Set default admin credentials (for development)
-        document.getElementById('username').value = 'admin@mahakaleshwar';
-        document.getElementById('password').value = 'Mahakaleshwar@123';
-    });
-}
+    }
+});
 
-// Export for use in other files
-window.authManager = authManager;
-window.logout = logout;
-window.updateShopDetails = updateShopDetails;
+// Make auth available globally
+window.auth = auth;
