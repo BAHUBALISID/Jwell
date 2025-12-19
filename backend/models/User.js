@@ -2,49 +2,44 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
 const userSchema = new mongoose.Schema({
-  username: {
+  name: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  email: {
     type: String,
     required: true,
     unique: true,
+    lowercase: true,
     trim: true
   },
   password: {
     type: String,
-    required: true
+    required: true,
+    minlength: 6
   },
   role: {
     type: String,
-    enum: ['admin', 'staff'],
-    default: 'admin'
+    enum: ['admin', 'staff', 'viewer'],
+    default: 'staff'
   },
-  shopName: {
+  mobile: {
     type: String,
-    default: 'Shri Mahakaleshwar Jewellers'
+    required: true
   },
-  address: {
-    type: String,
-    default: 'Anisabad, Patna, Bihar'
+  isActive: {
+    type: Boolean,
+    default: true
   },
-  gstin: {
-    type: String,
-    default: '10AABCU9603R1Z1'
-  },
-  phone: {
-    type: String,
-    default: '0612-XXXXXX'
-  },
-  email: {
-    type: String,
-    default: 'mahakaleshwarjewellers@gmail.com'
+  lastLogin: {
+    type: Date
   },
   createdAt: {
     type: Date,
     default: Date.now
   }
 });
-
-// Remove any userId field that might have been causing issues
-userSchema.index({ username: 1 }, { unique: true });
 
 // Hash password before saving
 userSchema.pre('save', async function(next) {
@@ -59,9 +54,11 @@ userSchema.pre('save', async function(next) {
   }
 });
 
-// Method to compare password
+// Compare password method
 userSchema.methods.comparePassword = async function(candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
-module.exports = mongoose.model('User', userSchema);
+const User = mongoose.model('User', userSchema);
+
+module.exports = User;
