@@ -6,41 +6,53 @@ const auth = async (req, res, next) => {
     const token = req.header('Authorization')?.replace('Bearer ', '');
     
     if (!token) {
-      return res.status(401).json({ 
-        success: false, 
-        message: 'Authentication required' 
-      });
+      throw new Error();
     }
-    
+
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.userId);
-    
+    const user = await User.findOne({ _id: decoded.userId, isActive: true });
+
     if (!user) {
-      return res.status(401).json({ 
-        success: false, 
-        message: 'User not found' 
-      });
+      throw new Error();
     }
-    
+
     req.user = user;
     req.token = token;
     next();
   } catch (error) {
     res.status(401).json({ 
       success: false, 
-      message: 'Invalid token' 
+      message: 'Please authenticate' 
     });
   }
 };
 
-const isAdmin = (req, res, next) => {
-  if (req.user.role !== 'admin') {
-    return res.status(403).json({ 
+const adminOnly = async (req, res, next) => {
+  try {
+    if (req.user.role !== 'admin') {
+      throw new Error();
+    }
+    next();
+  } catch (error) {
+    res.status(403).json({ 
       success: false, 
       message: 'Admin access required' 
     });
   }
-  next();
 };
 
-module.exports = { auth, isAdmin };
+const staffOrAdmin = async (req, res, next) => {
+  try {
+    if (req.user.role === 'viewer') {
+      throw new Error();
+    }
+    next();
+  } catch (error) {
+    res.status(403).json({ 
+      success: false, 
+      message: 'Staff or admin access required' 
+    });
+  }
+};
+
+module.exports = { auth, adminOnly, staffOrAdmin };
