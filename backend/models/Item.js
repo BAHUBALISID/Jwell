@@ -1,90 +1,82 @@
 const mongoose = require('mongoose');
 
 const itemSchema = new mongoose.Schema({
-  billId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Bill',
-    required: true
+  code: {
+    type: String,
+    required: true,
+    unique: true
   },
-  description: {
+  name: {
     type: String,
     required: true,
     trim: true
   },
+  category: {
+    type: String,
+    required: true,
+    enum: ['Ring', 'Chain', 'Bangle', 'Earring', 'Necklace', 'Bracelet', 'Pendant', 'Nose Pin', 'Anklet', 'Others']
+  },
   metalType: {
     type: String,
-    enum: ['gold', 'silver'],
-    required: true
+    required: true,
+    enum: ['Gold', 'Silver', 'Diamond', 'Platinum', 'Antique / Polki', 'Others']
   },
   purity: {
     type: String,
-    enum: ['24K', '22K', '18K', '999', '925'],
     required: true
   },
-  grossWeight: {
+  defaultWeight: {
     type: Number,
-    required: true,
     min: 0
   },
-  netWeight: {
+  defaultMakingCharges: {
     type: Number,
-    required: true,
-    min: 0
+    default: 10
   },
-  ratePerKg: {
-    type: Number,
-    required: true,
-    min: 0
-  },
-  ratePerGram: {
-    type: Number,
-    required: true,
-    min: 0
-  },
-  metalValue: {
-    type: Number,
-    required: true,
-    min: 0
-  },
-  makingChargeType: {
+  makingChargesType: {
     type: String,
     enum: ['percentage', 'fixed'],
-    required: true
+    default: 'percentage'
   },
-  makingChargeValue: {
+  stockQuantity: {
     type: Number,
-    required: true,
+    default: 0,
     min: 0
   },
-  makingChargeAmount: {
+  reorderLevel: {
     type: Number,
-    required: true,
+    default: 5
+  },
+  image: {
+    type: String
+  },
+  description: {
+    type: String
+  },
+  basePrice: {
+    type: Number,
     min: 0
   },
-  totalBeforeTax: {
-    type: Number,
-    required: true,
-    min: 0
-  },
-  cgst: {
-    type: Number,
-    required: true,
-    min: 0
-  },
-  sgst: {
-    type: Number,
-    required: true,
-    min: 0
-  },
-  total: {
-    type: Number,
-    required: true,
-    min: 0
+  isActive: {
+    type: Boolean,
+    default: true
   },
   createdAt: {
+    type: Date,
+    default: Date.now
+  },
+  updatedAt: {
     type: Date,
     default: Date.now
   }
 });
 
-module.exports = mongoose.model('Item', itemSchema);
+// Update timestamp before saving
+itemSchema.pre('save', function(next) {
+  this.updatedAt = Date.now();
+  next();
+});
+
+const Item = mongoose.model('Item', itemSchema);
+
+module.exports = Item;
