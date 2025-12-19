@@ -23,7 +23,10 @@ exports.createBill = async (req, res) => {
       discount = 0,
       paymentMode = 'cash',
       paymentStatus = 'paid',
-      exchangeItems = []
+      exchangeItems = [],
+      isIntraState = true,
+      gstOnMetal = 3,
+      gstOnMaking = 5
     } = req.body;
 
     // Generate bill number
@@ -38,6 +41,8 @@ exports.createBill = async (req, res) => {
 
     // Calculate items
     let subTotal = 0;
+    let totalMetalAmount = 0;
+    let totalMakingCharges = 0;
     const calculatedItems = [];
     const exchangeDetails = {
       hasExchange: exchangeItems.length > 0,
@@ -57,16 +62,47 @@ exports.createBill = async (req, res) => {
         });
       }
 
-      const itemCalc = calculateItemAmount(item, rateInfo.perGramRate);
+      // Get per gram rate (convert from kg if needed)
+      let perGramRate = rateInfo.rate;
+      if (rateInfo.unit === 'kg') {
+        perGramRate = rateInfo.rate / 1000;
+      }
+      
+      // Use item's GST rates or default from request
+      const itemGstOnMaking = item.gstOnMaking || gstOnMaking;
+      const itemGstOnMetal = item.gstOnMetal || gstOnMetal;
+      
+      const itemCalc = calculateItemAmount(
+        { ...item, rate: perGramRate }, 
+        perGramRate, 
+        itemGstOnMaking,
+        itemGstOnMetal,
+        isIntraState
+      );
       
       calculatedItems.push({
         ...item,
-        rate: rateInfo.perGramRate,
+        rate: perGramRate,
         makingChargesAmount: itemCalc.makingCharges,
-        amount: itemCalc.total
+        gstOnMaking: itemGstOnMaking,
+        gstOnMetal: itemGstOnMetal,
+        amount: itemCalc.total,
+        gstDetails: isIntraState ? {
+          cgstOnMetal: itemCalc.gstOnMetalCGST,
+          sgstOnMetal: itemCalc.gstOnMetalSGST,
+          cgstOnMaking: itemCalc.gstOnMakingCGST,
+          sgstOnMaking: itemCalc.gstOnMakingSGST
+        } : {
+          igstOnMetal: itemCalc.gstOnMetalIGST,
+          igstOnMaking: itemCalc.gstOnMakingIGST
+        },
+        metalAmount: itemCalc.metalAmount,
+        makingCharges: itemCalc.makingCharges
       });
 
       subTotal += itemCalc.total;
+      totalMetalAmount += itemCalc.metalAmount;
+      totalMakingCharges += itemCalc.makingCharges;
     }
 
     // Process exchange items
@@ -80,7 +116,12 @@ exports.createBill = async (req, res) => {
           });
         }
 
-        const exchangeValue = calculateExchangeValue(oldItem, rateInfo.perGramRate);
+        let perGramRate = rateInfo.rate;
+        if (rateInfo.unit === 'kg') {
+          perGramRate = rateInfo.rate / 1000;
+        }
+
+        const exchangeValue = calculateExchangeValue(oldItem, perGramRate);
         exchangeDetails.oldItemsTotal += exchangeValue;
 
         calculatedItems.push({
@@ -88,7 +129,7 @@ exports.createBill = async (req, res) => {
           metalType: oldItem.metalType,
           purity: oldItem.purity,
           weight: oldItem.weight,
-          rate: rateInfo.perGramRate,
+          rate: perGramRate,
           makingChargesType: 'fixed',
           makingCharges: 0,
           makingChargesAmount: 0,
@@ -96,7 +137,7 @@ exports.createBill = async (req, res) => {
           isExchangeItem: true,
           exchangeDetails: {
             oldItemWeight: oldItem.weight,
-            oldItemRate: rateInfo.perGramRate,
+            oldItemRate: perGramRate,
             wastageDeduction: oldItem.wastageDeduction || 0,
             meltingCharges: oldItem.meltingCharges || 0,
             netValue: exchangeValue
@@ -105,19 +146,25 @@ exports.createBill = async (req, res) => {
       }
     }
 
-    // Apply discount
-    const totalAfterDiscount = subTotal - discount;
+    // Calculate GST on final sale value (excluding exchange)
+    const gstCalculation = calculateGST(
+      totalMetalAmount,
+      totalMakingCharges,
+      gstOnMetal,
+      gstOnMaking,
+      isIntraState
+    );
 
-    // Calculate GST (assuming 3% for jewellery)
-    const gst = calculateGST(totalAfterDiscount);
-
-    // Calculate grand total
-    const grandTotal = totalAfterDiscount + gst;
+    // Calculate total before GST
+    const totalBeforeGST = totalMetalAmount + totalMakingCharges - discount;
+    
+    // Calculate grand total including GST
+    const grandTotal = totalBeforeGST + gstCalculation.totalGST;
 
     // Calculate exchange balances
     if (exchangeDetails.hasExchange) {
-      exchangeDetails.newItemsTotal = subTotal;
-      const balance = exchangeDetails.oldItemsTotal - subTotal;
+      exchangeDetails.newItemsTotal = grandTotal;
+      const balance = exchangeDetails.oldItemsTotal - grandTotal;
       
       if (balance > 0) {
         exchangeDetails.balanceRefundable = balance;
@@ -136,30 +183,55 @@ exports.createBill = async (req, res) => {
       customerName: customer.name,
       totalAmount: grandTotal,
       date: new Date().toISOString().split('T')[0],
-      address: 'Anisabad, Patna, Bihar'
+      address: 'Anisabad, Patna, Bihar',
+      gstType: isIntraState ? 'CGST+SGST' : 'IGST',
+      gstNumber: isIntraState ? '10XXXXXX' : 'IGSTXXXXXXXXXX'
     };
 
+    const qrImage = qr.imageSync(JSON.stringify(billQRData), { type: 'png' });
     const qrCodes = {
-      billQR: qr.imageSync(JSON.stringify(billQRData), { type: 'png' }).toString('base64'),
-      itemProofQR: '' // Will be generated after image upload
+      billQR: qrImage.toString('base64'),
+      itemProofQR: ''
     };
 
-    // Create bill
-    const bill = await Bill.create({
+    // Create bill with GST details
+    const billData = {
       billNumber,
       customer,
       items: calculatedItems,
       subTotal,
       discount,
-      gst,
+      gst: gstCalculation.totalGST,
+      gstDetails: {
+        metalAmount: totalMetalAmount,
+        makingCharges: totalMakingCharges,
+        gstOnMetal: gstCalculation.gstOnMetal,
+        gstOnMaking: gstCalculation.gstOnMaking,
+        isIntraState,
+        ...(isIntraState ? {
+          cgstOnMetal: gstCalculation.gstOnMetalCGST,
+          sgstOnMetal: gstCalculation.gstOnMetalSGST,
+          cgstOnMaking: gstCalculation.gstOnMakingCGST,
+          sgstOnMaking: gstCalculation.gstOnMakingSGST,
+          totalCGST: (gstCalculation.gstOnMetal + gstCalculation.gstOnMaking) / 2,
+          totalSGST: (gstCalculation.gstOnMetal + gstCalculation.gstOnMaking) / 2
+        } : {
+          igstOnMetal: gstCalculation.gstOnMetalIGST,
+          igstOnMaking: gstCalculation.gstOnMakingIGST,
+          totalIGST: gstCalculation.gstOnMetal + gstCalculation.gstOnMaking
+        })
+      },
       grandTotal,
       amountInWords,
       paymentMode,
       paymentStatus,
       exchangeDetails,
       qrCodes,
-      createdBy: req.user._id
-    });
+      createdBy: req.user._id,
+      isIntraState
+    };
+
+    const bill = await Bill.create(billData);
 
     res.status(201).json({
       success: true,
@@ -171,7 +243,7 @@ exports.createBill = async (req, res) => {
     console.error('Create bill error:', error);
     res.status(500).json({
       success: false,
-      message: 'Server error'
+      message: 'Server error: ' + error.message
     });
   }
 };
@@ -473,6 +545,145 @@ exports.regenerateQR = async (req, res) => {
 
   } catch (error) {
     console.error('Regenerate QR error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+};
+
+// Calculate bill in real-time for frontend
+exports.calculateBill = async (req, res) => {
+  try {
+    const {
+      items,
+      exchangeItems = [],
+      discount = 0,
+      isIntraState = true,
+      gstOnMetal = 3,
+      gstOnMaking = 5
+    } = req.body;
+
+    // Get current rates
+    const rates = await Rate.find({ active: true });
+    const rateMap = {};
+    rates.forEach(rate => {
+      rateMap[rate.metalType] = rate;
+    });
+
+    // Calculate items
+    let subTotal = 0;
+    let totalMetalAmount = 0;
+    let totalMakingCharges = 0;
+    let totalGST = 0;
+    const calculatedItems = [];
+    const exchangeDetails = {
+      hasExchange: exchangeItems.length > 0,
+      oldItemsTotal: 0,
+      newItemsTotal: 0,
+      balancePayable: 0,
+      balanceRefundable: 0
+    };
+
+    // Process new items
+    for (const item of items) {
+      const rateInfo = rateMap[item.metalType];
+      if (!rateInfo) {
+        continue;
+      }
+
+      // Get per gram rate
+      let perGramRate = rateInfo.rate;
+      if (rateInfo.unit === 'kg') {
+        perGramRate = rateInfo.rate / 1000;
+      }
+      
+      const itemCalc = calculateItemAmount(
+        { ...item, rate: perGramRate }, 
+        perGramRate, 
+        gstOnMaking,
+        gstOnMetal,
+        isIntraState
+      );
+      
+      calculatedItems.push({
+        ...item,
+        rate: perGramRate,
+        makingChargesAmount: itemCalc.makingCharges,
+        amount: itemCalc.total,
+        metalAmount: itemCalc.metalAmount,
+        makingCharges: itemCalc.makingCharges,
+        gstOnItem: isIntraState ? 
+          (itemCalc.gstOnMetalCGST + itemCalc.gstOnMetalSGST + itemCalc.gstOnMakingCGST + itemCalc.gstOnMakingSGST) :
+          (itemCalc.gstOnMetalIGST + itemCalc.gstOnMakingIGST)
+      });
+
+      subTotal += itemCalc.total;
+      totalMetalAmount += itemCalc.metalAmount;
+      totalMakingCharges += itemCalc.makingCharges;
+      totalGST += isIntraState ? 
+        (itemCalc.gstOnMetalCGST + itemCalc.gstOnMetalSGST + itemCalc.gstOnMakingCGST + itemCalc.gstOnMakingSGST) :
+        (itemCalc.gstOnMetalIGST + itemCalc.gstOnMakingIGST);
+    }
+
+    // Process exchange items
+    for (const oldItem of exchangeItems) {
+      const rateInfo = rateMap[oldItem.metalType];
+      if (!rateInfo) {
+        continue;
+      }
+
+      let perGramRate = rateInfo.rate;
+      if (rateInfo.unit === 'kg') {
+        perGramRate = rateInfo.rate / 1000;
+      }
+
+      const exchangeValue = calculateExchangeValue(oldItem, perGramRate);
+      exchangeDetails.oldItemsTotal += exchangeValue;
+    }
+
+    // Calculate GST
+    const gstCalculation = calculateGST(
+      totalMetalAmount,
+      totalMakingCharges,
+      gstOnMetal,
+      gstOnMaking,
+      isIntraState
+    );
+
+    // Calculate totals
+    const totalBeforeGST = totalMetalAmount + totalMakingCharges - discount;
+    const grandTotal = totalBeforeGST + gstCalculation.totalGST;
+
+    // Calculate exchange balances
+    if (exchangeDetails.hasExchange) {
+      exchangeDetails.newItemsTotal = grandTotal;
+      const balance = exchangeDetails.oldItemsTotal - grandTotal;
+      
+      if (balance > 0) {
+        exchangeDetails.balanceRefundable = balance;
+      } else {
+        exchangeDetails.balancePayable = Math.abs(balance);
+      }
+    }
+
+    res.json({
+      success: true,
+      calculation: {
+        subTotal,
+        totalMetalAmount,
+        totalMakingCharges,
+        discount,
+        gst: gstCalculation.totalGST,
+        grandTotal,
+        exchangeDetails,
+        items: calculatedItems,
+        gstDetails: gstCalculation
+      }
+    });
+
+  } catch (error) {
+    console.error('Calculate bill error:', error);
     res.status(500).json({
       success: false,
       message: 'Server error'
