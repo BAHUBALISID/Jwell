@@ -66,7 +66,7 @@ const numberToWords = (num) => {
   return words.replace(/\s+/g, ' ').trim();
 };
 
-const calculateItemAmount = (item, ratePerGram) => {
+const calculateItemAmount = (item, ratePerGram, gstOnMakingCharges = 5, gstOnMetal = 3, isIntraState = true) => {
   let metalAmount = 0;
   
   if (item.metalType === 'Diamond') {
@@ -82,11 +82,32 @@ const calculateItemAmount = (item, ratePerGram) => {
     makingCharges = item.makingCharges;
   }
   
-  return {
-    metalAmount,
-    makingCharges,
-    total: metalAmount + makingCharges
-  };
+  // Calculate GST on making charges (5%) and metal (3%)
+  const gstOnMaking = (makingCharges * gstOnMakingCharges) / 100;
+  const gstOnMetalAmount = (metalAmount * gstOnMetal) / 100;
+  
+  // For intra-state: CGST + SGST (half each), For inter-state: IGST (full)
+  if (isIntraState) {
+    // Split GST equally between CGST and SGST
+    return {
+      metalAmount,
+      makingCharges,
+      gstOnMakingCGST: gstOnMaking / 2,
+      gstOnMakingSGST: gstOnMaking / 2,
+      gstOnMetalCGST: gstOnMetalAmount / 2,
+      gstOnMetalSGST: gstOnMetalAmount / 2,
+      total: metalAmount + makingCharges + gstOnMaking + gstOnMetalAmount
+    };
+  } else {
+    // IGST - full amount
+    return {
+      metalAmount,
+      makingCharges,
+      gstOnMakingIGST: gstOnMaking,
+      gstOnMetalIGST: gstOnMetalAmount,
+      total: metalAmount + makingCharges + gstOnMaking + gstOnMetalAmount
+    };
+  }
 };
 
 const calculateExchangeValue = (oldItem, currentRate) => {
@@ -108,8 +129,35 @@ const calculateExchangeValue = (oldItem, currentRate) => {
   return Math.max(0, grossValue);
 };
 
-const calculateGST = (amount, gstRate = 3) => {
-  return (amount * gstRate) / 100;
+const calculateGST = (metalAmount, makingCharges, gstOnMetal = 3, gstOnMaking = 5, isIntraState = true) => {
+  const gstOnMetalAmount = (metalAmount * gstOnMetal) / 100;
+  const gstOnMakingAmount = (makingCharges * gstOnMaking) / 100;
+  
+  if (isIntraState) {
+    return {
+      metalAmount,
+      makingCharges,
+      gstOnMetal: gstOnMetalAmount,
+      gstOnMaking: gstOnMakingAmount,
+      gstOnMetalCGST: gstOnMetalAmount / 2,
+      gstOnMetalSGST: gstOnMetalAmount / 2,
+      gstOnMakingCGST: gstOnMakingAmount / 2,
+      gstOnMakingSGST: gstOnMakingAmount / 2,
+      total: metalAmount + makingCharges + gstOnMetalAmount + gstOnMakingAmount,
+      totalGST: gstOnMetalAmount + gstOnMakingAmount
+    };
+  } else {
+    return {
+      metalAmount,
+      makingCharges,
+      gstOnMetal: gstOnMetalAmount,
+      gstOnMaking: gstOnMakingAmount,
+      gstOnMetalIGST: gstOnMetalAmount,
+      gstOnMakingIGST: gstOnMakingAmount,
+      total: metalAmount + makingCharges + gstOnMetalAmount + gstOnMakingAmount,
+      totalGST: gstOnMetalAmount + gstOnMakingAmount
+    };
+  }
 };
 
 module.exports = {
