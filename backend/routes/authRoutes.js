@@ -1,29 +1,33 @@
 const express = require('express');
 const router = express.Router();
 const { body } = require('express-validator');
-const { login, getProfile, updateShopDetails } = require('../controllers/authController');
-const { auth } = require('../middleware/auth');
+const authController = require('../controllers/authController');
+const { auth, adminOnly } = require('../middleware/auth');
 
-// @route   POST /api/auth/login
-// @desc    Admin login
-// @access  Public
-router.post('/login', [
-  body('username').notEmpty().withMessage('Username is required'),
+// Validation rules
+const registerValidation = [
+  body('name').trim().notEmpty().withMessage('Name is required'),
+  body('email').isEmail().withMessage('Valid email is required'),
+  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+  body('mobile').matches(/^[0-9]{10}$/).withMessage('Valid 10-digit mobile number is required')
+];
+
+const loginValidation = [
+  body('email').isEmail().withMessage('Valid email is required'),
   body('password').notEmpty().withMessage('Password is required')
-], login);
+];
 
-// @route   GET /api/auth/profile
-// @desc    Get user profile
-// @access  Private
-router.get('/profile', auth, getProfile);
+// Public routes
+router.post('/register', registerValidation, authController.register);
+router.post('/login', loginValidation, authController.login);
 
-// @route   PUT /api/auth/shop-details
-// @desc    Update shop details
-// @access  Private
-router.put('/shop-details', auth, [
-  body('shopName').notEmpty().withMessage('Shop name is required'),
-  body('address').notEmpty().withMessage('Address is required'),
-  body('gstin').notEmpty().withMessage('GSTIN is required')
-], updateShopDetails);
+// Protected routes
+router.get('/profile', auth, authController.getProfile);
+router.put('/profile', auth, authController.updateProfile);
+router.put('/change-password', auth, authController.changePassword);
+
+// Admin only routes
+router.get('/users', auth, adminOnly, authController.getAllUsers);
+router.put('/users/:userId/status', auth, adminOnly, authController.updateUserStatus);
 
 module.exports = router;
