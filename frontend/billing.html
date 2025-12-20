@@ -593,3 +593,33 @@
     </script>
 </body>
 </html>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (window.auth && window.auth.isAuthenticated && window.auth.isAuthenticated()) {
+            // Create instance
+            const billingSystem = new BillingSystem();
+            window.BillingSystem.instance = billingSystem;
+            
+            // Setup modal close handlers
+            document.querySelectorAll('.close').forEach(closeBtn => {
+                closeBtn.addEventListener('click', function() {
+                    document.getElementById('billPreviewModal').classList.remove('show');
+                });
+            });
+            
+            // Close modal on outside click
+            document.getElementById('billPreviewModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.remove('show');
+                }
+            });
+            
+            // Test purity dropdown
+            console.log('Billing system initialized');
+            console.log('Metal types available:', Object.keys(billingSystem.rates));
+            
+        } else {
+            window.location.href = 'login.html';
+        }
+    });
+</script>
