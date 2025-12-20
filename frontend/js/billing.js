@@ -34,6 +34,7 @@ class BillingSystem {
     async init() {
         await this.loadRates();
         this.setupEventListeners();
+        this.setupCustomerFormListeners(); // ADDED THIS LINE
         this.updateSummary();
     }
 
@@ -186,6 +187,34 @@ class BillingSystem {
         this.fixDropdowns();
     }
 
+    // ADDED THIS METHOD TO HANDLE CUSTOMER FORM UPDATES
+    setupCustomerFormListeners() {
+        // Listen to customer form input changes
+        const customerFields = {
+            'customerName': 'name',
+            'customerMobile': 'mobile',
+            'customerAddress': 'address',
+            'customerDOB': 'dob',
+            'customerPAN': 'pan',
+            'customerAadhaar': 'aadhaar'
+        };
+
+        Object.entries(customerFields).forEach(([elementId, field]) => {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.addEventListener('input', (e) => {
+                    this.currentBill.customer[field] = e.target.value;
+                    console.log(`Customer ${field} updated to:`, e.target.value); // Debug
+                });
+                
+                // Also update on blur for good measure
+                element.addEventListener('blur', (e) => {
+                    this.currentBill.customer[field] = e.target.value;
+                });
+            }
+        });
+    }
+
     fixDropdowns() {
         // Force dropdowns to be visible on all devices
         const style = document.createElement('style');
@@ -223,6 +252,7 @@ class BillingSystem {
 
     updateCustomer(field, value) {
         this.currentBill.customer[field] = value;
+        console.log(`Customer ${field} updated to:`, value); // Debug
     }
 
     updateDiscount(value) {
@@ -687,6 +717,8 @@ class BillingSystem {
     }
 
     validateBill() {
+        console.log('Validating bill...', this.currentBill.customer); // Debug
+        
         if (!this.currentBill.customer.name?.trim()) {
             this.showAlert('danger', 'Customer name is required');
             return false;
@@ -1140,6 +1172,11 @@ if (typeof window !== 'undefined') {
         printBill: () => {
             if (window.BillingSystem && window.BillingSystem.instance) {
                 window.BillingSystem.instance.printBill();
+            }
+        },
+        updateCustomer: (field, value) => {
+            if (window.BillingSystem && window.BillingSystem.instance) {
+                window.BillingSystem.instance.updateCustomer(field, value);
             }
         }
     };
