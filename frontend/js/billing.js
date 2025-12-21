@@ -146,45 +146,53 @@ class BillingSystem {
     }
 
     setupEventListeners() {
-        // GST Type
-        document.getElementById('gstType').addEventListener('change', (e) => {
-            this.currentBill.isIntraState = e.target.value === 'intra';
-            this.updateSummary();
-        });
+    // GST Type
+    document.getElementById('gstType').addEventListener('change', (e) => {
+        this.currentBill.isIntraState = e.target.value === 'intra';
+        this.updateSummary();
+    });
 
-        // Payment Mode
-        document.getElementById('paymentMode').addEventListener('change', (e) => {
-            this.currentBill.paymentMode = e.target.value;
-        });
+    // Payment Mode
+    document.getElementById('paymentMode').addEventListener('change', (e) => {
+        this.currentBill.paymentMode = e.target.value;
+    });
 
-        // Discount
-        document.getElementById('discount').addEventListener('input', (e) => {
-            this.currentBill.discount = parseFloat(e.target.value) || 0;
-            this.updateSummary();
-        });
+    // Discount
+    document.getElementById('discount').addEventListener('input', (e) => {
+        this.currentBill.discount = parseFloat(e.target.value) || 0;
+        this.updateSummary();
+    });
 
-        // Add Item Button
-        document.getElementById('addItemBtn').addEventListener('click', () => {
-            this.addItemRow(false);
-        });
+    // Add Item Button - FIXED: Remove any existing listeners first
+    const addItemBtn = document.getElementById('addItemBtn');
+    addItemBtn.replaceWith(addItemBtn.cloneNode(true));
+    document.getElementById('addItemBtn').addEventListener('click', () => {
+        this.addItemRow(false);
+    });
 
-        // Add Exchange Button
-        document.getElementById('addExchangeBtn').addEventListener('click', () => {
-            this.addItemRow(true);
-        });
+    // Add Exchange Button - FIXED: Remove any existing listeners first
+    const addExchangeBtn = document.getElementById('addExchangeBtn');
+    addExchangeBtn.replaceWith(addExchangeBtn.cloneNode(true));
+    document.getElementById('addExchangeBtn').addEventListener('click', () => {
+        this.addItemRow(true);
+    });
 
-        // Generate Bill Button
-        document.getElementById('generateBillBtn').addEventListener('click', () => {
-            this.generateBill();
-        });
+    // Generate Bill Button
+    const generateBillBtn = document.getElementById('generateBillBtn');
+    generateBillBtn.replaceWith(generateBillBtn.cloneNode(true));
+    document.getElementById('generateBillBtn').addEventListener('click', () => {
+        this.generateBill();
+    });
 
-        // Print Bill Button
-        document.getElementById('printBillBtn').addEventListener('click', () => {
-            this.printBill();
-        });
+    // Print Bill Button
+    const printBillBtn = document.getElementById('printBillBtn');
+    printBillBtn.replaceWith(printBillBtn.cloneNode(true));
+    document.getElementById('printBillBtn').addEventListener('click', () => {
+        this.printBill();
+    });
 
-        // Make mobile dropdowns visible
-        this.fixDropdowns();
+    // Make mobile dropdowns visible
+    this.fixDropdowns();
     }
 
     setupCustomerFormListeners() {
