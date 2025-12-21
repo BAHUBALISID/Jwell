@@ -1291,3 +1291,6 @@ if (typeof window !== 'undefined') {
         }
     };
 }
+if (typeof window !== 'undefined') {
+    BillingSystem.instance = new BillingSystem();
+}
