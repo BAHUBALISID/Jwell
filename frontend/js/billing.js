@@ -34,7 +34,7 @@ class BillingSystem {
     async init() {
         await this.loadRates();
         this.setupEventListeners();
-        this.setupCustomerFormListeners(); // ADDED THIS LINE
+        this.setupCustomerFormListeners();
         this.updateSummary();
     }
 
@@ -187,9 +187,7 @@ class BillingSystem {
         this.fixDropdowns();
     }
 
-    // FIXED: Proper customer form listeners
     setupCustomerFormListeners() {
-        // Listen to customer form input changes
         const customerFields = {
             'customerName': 'name',
             'customerMobile': 'mobile',
@@ -202,13 +200,11 @@ class BillingSystem {
         Object.entries(customerFields).forEach(([elementId, field]) => {
             const element = document.getElementById(elementId);
             if (element) {
-                // Add input event listener
                 element.addEventListener('input', (e) => {
                     this.currentBill.customer[field] = e.target.value;
                     console.log(`Customer ${field} updated to:`, e.target.value);
                 });
                 
-                // Also update on change event (for compatibility)
                 element.addEventListener('change', (e) => {
                     this.currentBill.customer[field] = e.target.value;
                     console.log(`Customer ${field} changed to:`, e.target.value);
@@ -218,10 +214,8 @@ class BillingSystem {
     }
 
     fixDropdowns() {
-        // Force dropdowns to be visible on all devices
         const style = document.createElement('style');
         style.textContent = `
-            /* Make all dropdowns visible */
             select {
                 display: block !important;
                 visibility: visible !important;
@@ -231,19 +225,16 @@ class BillingSystem {
                 background-color: white !important;
             }
             
-            /* iOS fix */
             @media screen and (-webkit-min-device-pixel-ratio:0) {
                 select, input, textarea {
                     font-size: 16px !important;
                 }
             }
             
-            /* Touch targets */
             select, input, button {
                 min-height: 44px !important;
             }
             
-            /* Item row fixes */
             .item-row select {
                 width: 100% !important;
                 margin: 5px 0 !important;
@@ -389,7 +380,6 @@ class BillingSystem {
         this.updateResponsiveLayout();
     }
 
-    // Handle metal type change with proper binding
     handleMetalChange(itemId, metalType, isExchange) {
         console.log('Metal changed:', metalType, 'for item:', itemId);
         
@@ -403,7 +393,6 @@ class BillingSystem {
             // Update purity dropdown
             const puritySelect = document.querySelector(`#${itemId} .purity`);
             if (puritySelect) {
-                // Get purity levels from rates or default
                 let purities = [];
                 if (this.rates[metalType] && this.rates[metalType].purityLevels) {
                     purities = this.rates[metalType].purityLevels;
@@ -415,11 +404,9 @@ class BillingSystem {
                 
                 console.log('Setting purity options:', purities);
                 
-                // Clear and populate purity dropdown
                 puritySelect.innerHTML = '<option value="">Select Purity *</option>' + 
                     purities.map(purity => `<option value="${purity}">${purity}</option>`).join('');
                 
-                // Auto-select first option
                 if (purities.length > 0) {
                     item.purity = purities[0];
                     puritySelect.value = purities[0];
@@ -430,14 +417,12 @@ class BillingSystem {
         }
     }
 
-    // Handle item input with proper binding
     handleItemInput(itemId, field, value, isExchange) {
         const item = isExchange ? 
             this.currentBill.exchangeItems.find(i => i.id === itemId) :
             this.currentBill.items.find(i => i.id === itemId);
         
         if (item) {
-            // Parse numeric fields
             if (['weight', 'makingCharges', 'wastageDeduction', 'meltingCharges'].includes(field)) {
                 item[field] = parseFloat(value) || 0;
             } else {
@@ -454,7 +439,6 @@ class BillingSystem {
                 item => item.id !== itemId
             );
             
-            // Hide exchange section if no items left
             if (this.currentBill.exchangeItems.length === 0) {
                 document.getElementById('exchangeSection').style.display = 'none';
             }
@@ -463,7 +447,6 @@ class BillingSystem {
                 item => item.id !== itemId
             );
             
-            // Show placeholder if no items left
             const itemsContainer = document.getElementById('itemsContainer');
             if (this.currentBill.items.length === 0 && itemsContainer) {
                 itemsContainer.innerHTML = `
@@ -719,13 +702,12 @@ class BillingSystem {
     }
 
     validateBill() {
-        console.log('Validating bill...', this.currentBill.customer); // Debug
+        console.log('Validating bill...', this.currentBill.customer);
         
-        // FIXED: Also check form inputs directly as fallback
+        // Check customer details
         const customerNameInput = document.getElementById('customerName');
         const customerMobileInput = document.getElementById('customerMobile');
         
-        // Update from inputs if needed
         if (customerNameInput && !this.currentBill.customer.name?.trim()) {
             this.currentBill.customer.name = customerNameInput.value.trim();
         }
@@ -749,24 +731,54 @@ class BillingSystem {
             return false;
         }
         
-        for (const item of this.currentBill.items) {
-            if (!item.metalType) {
-                this.showAlert('danger', 'Please select metal type for all items');
+        // Check each item - FIXED: Now checking actual form fields for better accuracy
+        for (let i = 0; i < this.currentBill.items.length; i++) {
+            const item = this.currentBill.items[i];
+            const itemRow = document.getElementById(item.id);
+            
+            if (!itemRow) continue;
+            
+            // Get current values from form fields
+            const metalTypeSelect = itemRow.querySelector('.metal-type');
+            const puritySelect = itemRow.querySelector('.purity');
+            const weightInput = itemRow.querySelector('input[type="number"]:nth-of-type(1)');
+            const makingChargesInput = itemRow.querySelector('input[type="number"]:nth-of-type(2)');
+            
+            // Update item data from form fields
+            if (metalTypeSelect) {
+                item.metalType = metalTypeSelect.value;
+            }
+            
+            if (puritySelect) {
+                item.purity = puritySelect.value;
+            }
+            
+            if (weightInput) {
+                item.weight = parseFloat(weightInput.value) || 0;
+            }
+            
+            if (makingChargesInput) {
+                item.makingCharges = parseFloat(makingChargesInput.value) || 0;
+            }
+            
+            // Now validate
+            if (!item.metalType || item.metalType.trim() === '') {
+                this.showAlert('danger', `Please select metal type for item ${i + 1}`);
                 return false;
             }
             
-            if (!item.purity) {
-                this.showAlert('danger', 'Please select purity for all items');
+            if (!item.purity || item.purity.trim() === '') {
+                this.showAlert('danger', `Please select purity for item ${i + 1}`);
                 return false;
             }
             
             if (!item.weight || item.weight <= 0) {
-                this.showAlert('danger', 'Please enter valid weight for all items');
+                this.showAlert('danger', `Please enter valid weight for item ${i + 1}`);
                 return false;
             }
             
             if (item.makingCharges === undefined || item.makingCharges < 0) {
-                this.showAlert('danger', 'Please enter valid making charges for all items');
+                this.showAlert('danger', `Please enter valid making charges for item ${i + 1}`);
                 return false;
             }
         }
@@ -785,7 +797,7 @@ class BillingSystem {
         btn.disabled = true;
         
         try {
-            // FIXED: Ensure all customer data is captured from form
+            // Capture all customer data
             const customerData = {
                 name: this.currentBill.customer.name || document.getElementById('customerName').value,
                 mobile: this.currentBill.customer.mobile || document.getElementById('customerMobile').value,
@@ -795,24 +807,30 @@ class BillingSystem {
                 aadhaar: this.currentBill.customer.aadhaar || document.getElementById('customerAadhaar').value
             };
             
+            // Prepare items data - ensure all required fields are present
+            const itemsData = this.currentBill.items.map(item => ({
+                description: item.description || '',
+                metalType: item.metalType,
+                purity: item.purity,
+                weight: item.weight,
+                makingCharges: item.makingCharges || 0,
+                makingChargesType: item.makingChargesType || 'percentage'
+            }));
+            
+            // Prepare exchange items data
+            const exchangeItemsData = this.currentBill.exchangeItems.map(item => ({
+                description: item.description || '',
+                metalType: item.metalType,
+                purity: item.purity,
+                weight: item.weight,
+                wastageDeduction: item.wastageDeduction || 0,
+                meltingCharges: item.meltingCharges || 0
+            }));
+            
             const billData = {
                 customer: customerData,
-                items: this.currentBill.items.map(item => ({
-                    description: item.description || '',
-                    metalType: item.metalType,
-                    purity: item.purity,
-                    weight: item.weight,
-                    makingCharges: item.makingCharges || 0,
-                    makingChargesType: item.makingChargesType || 'percentage'
-                })),
-                exchangeItems: this.currentBill.exchangeItems.map(item => ({
-                    description: item.description || '',
-                    metalType: item.metalType,
-                    purity: item.purity,
-                    weight: item.weight,
-                    wastageDeduction: item.wastageDeduction || 0,
-                    meltingCharges: item.meltingCharges || 0
-                })),
+                items: itemsData,
+                exchangeItems: exchangeItemsData,
                 discount: this.currentBill.discount,
                 paymentMode: this.currentBill.paymentMode,
                 isIntraState: this.currentBill.isIntraState,
