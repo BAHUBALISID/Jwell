@@ -4,25 +4,25 @@ const { body } = require('express-validator');
 const billController = require('../controllers/billController');
 const { auth, staffOrAdmin } = require('../middleware/auth');
 
-// Validation rules - Updated to make most fields optional
+// Validation rules - Fixed to handle optional fields properly
 const createBillValidation = [
   body('customer.name').trim().notEmpty().withMessage('Customer name is required'),
   body('customer.mobile').matches(/^[0-9]{10}$/).withMessage('Valid mobile number is required'),
-  body('customer.address').optional().trim(),
-  body('customer.dob').optional().isISO8601().withMessage('Valid date format required'),
-  body('customer.pan').optional().matches(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/).withMessage('Valid PAN format required'),
-  body('customer.aadhaar').optional().matches(/^[0-9]{12}$/).withMessage('Valid 12-digit Aadhaar required'),
+  body('customer.address').optional({ checkFalsy: true }).trim(),
+  body('customer.dob').optional({ checkFalsy: true }).isISO8601().withMessage('Valid date format required'),
+  body('customer.pan').optional({ checkFalsy: true }).matches(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/).withMessage('Valid PAN format required'),
+  body('customer.aadhaar').optional({ checkFalsy: true }).matches(/^[0-9]{12}$/).withMessage('Valid 12-digit Aadhaar required'),
   body('items').isArray({ min: 1 }).withMessage('At least one item is required'),
-  body('items.*.description').optional().trim(),
+  body('items.*.description').optional({ checkFalsy: true }).trim(),
   body('items.*.metalType').isIn(['Gold', 'Silver', 'Diamond', 'Platinum', 'Antique / Polki', 'Others'])
     .withMessage('Valid metal type is required'),
   body('items.*.purity').trim().notEmpty().withMessage('Purity is required'),
   body('items.*.weight').isFloat({ min: 0.001 }).withMessage('Valid weight is required (min 0.001)'),
   body('items.*.makingCharges').isFloat({ min: 0 }).withMessage('Valid making charges is required'),
-  body('discount').optional().isFloat({ min: 0 }).withMessage('Discount must be a positive number'),
-  body('isIntraState').optional().isBoolean(),
-  body('gstOnMetal').optional().isFloat({ min: 0, max: 100 }).withMessage('GST on metal must be between 0-100'),
-  body('gstOnMaking').optional().isFloat({ min: 0, max: 100 }).withMessage('GST on making must be between 0-100')
+  body('discount').optional({ checkFalsy: true }).isFloat({ min: 0 }).withMessage('Discount must be a positive number'),
+  body('isIntraState').optional({ checkFalsy: true }).isBoolean(),
+  body('gstOnMetal').optional({ checkFalsy: true }).isFloat({ min: 0, max: 100 }).withMessage('GST on metal must be between 0-100'),
+  body('gstOnMaking').optional({ checkFalsy: true }).isFloat({ min: 0, max: 100 }).withMessage('GST on making must be between 0-100')
 ];
 
 // Protected routes (staff and admin)
