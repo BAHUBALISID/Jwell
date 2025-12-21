@@ -185,7 +185,7 @@
             <div class="customer-section card">
                 <div class="card-header">
                     <h3><i class="fas fa-user"></i> Customer Details</h3>
-                    <button class="btn btn-outline btn-sm" onclick="billingSystem.clearForm()">
+                    <button type="button" class="btn btn-outline btn-sm" onclick="billingSystem.clearForm()">
                         <i class="fas fa-redo"></i> Clear
                     </button>
                 </div>
@@ -245,10 +245,10 @@
                 <div class="card-header">
                     <h3><i class="fas fa-shopping-cart"></i> Items</h3>
                     <div style="display: flex; gap: 10px;">
-                        <button class="btn btn-primary btn-sm" id="addItemBtn">
+                        <button type="button" class="btn btn-primary btn-sm" id="addItemBtn">
                             <i class="fas fa-plus"></i> Add Item
                         </button>
-                        <button class="btn btn-warning btn-sm" id="addExchangeBtn">
+                        <button type="button" class="btn btn-warning btn-sm" id="addExchangeBtn">
                             <i class="fas fa-exchange-alt"></i> Add Exchange
                         </button>
                     </div>
@@ -389,13 +389,13 @@
                         </div>
                         
                         <div class="action-buttons" style="display: flex; gap: 15px; margin-top: 20px;">
-                            <button class="btn btn-success btn-lg" id="generateBillBtn">
+                            <button type="button" class="btn btn-success btn-lg" id="generateBillBtn">
                                 <i class="fas fa-file-invoice"></i> Generate Bill
                             </button>
-                            <button class="btn btn-outline btn-lg" id="printBillBtn" disabled>
+                            <button type="button" class="btn btn-outline btn-lg" id="printBillBtn" disabled>
                                 <i class="fas fa-print"></i> Print Bill
                             </button>
-                            <button class="btn btn-secondary btn-lg" onclick="billingSystem.clearForm()">
+                            <button type="button" class="btn btn-secondary btn-lg" onclick="billingSystem.clearForm()">
                                 <i class="fas fa-times"></i> Clear All
                             </button>
                         </div>
@@ -410,7 +410,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3>Bill Preview</h3>
-                <button class="close" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #666;">&times;</button>
+                <button type="button" class="close" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #666;">&times;</button>
             </div>
             <div class="modal-body">
                 <div class="preview-container print-area">
@@ -529,10 +529,10 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-primary" onclick="billingSystem.printBill()">
+                <button type="button" class="btn btn-primary" onclick="billingSystem.printBill()">
                     <i class="fas fa-print"></i> Print Bill
                 </button>
-                <button class="btn btn-outline close">Close</button>
+                <button type="button" class="btn btn-outline close">Close</button>
             </div>
         </div>
     </div>
@@ -577,14 +577,6 @@
                     document.getElementById('billPreviewModal').classList.remove('show');
                 });
                 
-                // Make dropdowns visible on mobile
-                document.querySelectorAll('select').forEach(select => {
-                    select.addEventListener('focus', function() {
-                        this.style.opacity = '1';
-                        this.style.visibility = 'visible';
-                    });
-                });
-                
             } else {
                 // Redirect to login
                 window.location.href = 'login.html';
@@ -593,33 +585,3 @@
     </script>
 </body>
 </html>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        if (window.auth && window.auth.isAuthenticated && window.auth.isAuthenticated()) {
-            // Create instance
-            const billingSystem = new BillingSystem();
-            window.BillingSystem.instance = billingSystem;
-            
-            // Setup modal close handlers
-            document.querySelectorAll('.close').forEach(closeBtn => {
-                closeBtn.addEventListener('click', function() {
-                    document.getElementById('billPreviewModal').classList.remove('show');
-                });
-            });
-            
-            // Close modal on outside click
-            document.getElementById('billPreviewModal').addEventListener('click', function(e) {
-                if (e.target === this) {
-                    this.classList.remove('show');
-                }
-            });
-            
-            // Test purity dropdown
-            console.log('Billing system initialized');
-            console.log('Metal types available:', Object.keys(billingSystem.rates));
-            
-        } else {
-            window.location.href = 'login.html';
-        }
-    });
-</script>
