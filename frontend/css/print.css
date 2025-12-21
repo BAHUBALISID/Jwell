@@ -1,237 +1,296 @@
-/* ===============================
-   UNIVERSAL PRINT STYLES
-   Mobile + Desktop + macOS SAFE
-   =============================== */
+/* Print-specific styles for invoice */
 
 @media print {
-
-  /* Page setup (DO NOT force size) */
   @page {
+    size: A4;
     margin: 10mm;
   }
 
-  html, body {
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 12pt;
+    line-height: 1.4;
+    color: #000;
+    background: #fff !important;
     margin: 0;
     padding: 0;
     width: 100%;
-    background: #fff !important;
-    color: #000;
-    font-family: -apple-system, BlinkMacSystemFont,
-                 "Segoe UI", Roboto, Arial, sans-serif;
-    font-size: 11pt;
-    line-height: 1.35;
   }
 
   /* Hide everything except print container */
-  body > *:not(.print-container) {
+  body * {
     display: none !important;
   }
 
-  .print-container {
+  .print-container,
+  .print-container * {
     display: block !important;
     visibility: visible !important;
-    width: 100%;
-    margin: 0;
-    padding: 0;
-    background: #fff;
   }
 
-  /* ===============================
-     INVOICE CONTAINER
-     =============================== */
+  .print-container {
+    width: 100%;
+    min-height: auto;
+    margin: 0;
+    padding: 0;
+    background: white;
+    position: static;
+  }
 
+  /* Invoice Container - responsive */
   .invoice-container {
     width: 100%;
     max-width: 210mm;
     margin: 0 auto;
-    padding: 6mm;
+    padding: 5mm;
     background: #fff;
     box-shadow: none;
     border: none;
     page-break-inside: avoid;
+    page-break-after: auto;
+    page-break-before: auto;
   }
 
-  /* ===============================
-     HEADER
-     =============================== */
-
+  /* Header */
   .shop-name {
+    font-size: 20pt;
+    font-weight: bold;
+    color: #D4AF37;
     text-align: center;
-    font-size: 18pt;
-    font-weight: 700;
-    color: #000;
-    margin-bottom: 2mm;
+    margin: 5mm 0 2mm 0;
   }
 
   .shop-address,
   .shop-contact {
+    font-size: 10pt;
     text-align: center;
-    font-size: 9pt;
-    color: #555;
-    margin: 0.5mm 0;
+    margin: 1mm 0;
+    color: #666;
   }
 
-  /* ===============================
-     BILL INFO
-     =============================== */
-
+  /* Bill Info */
   .bill-info {
-    margin: 4mm 0;
+    display: block;
+    margin: 5mm 0;
     padding: 3mm;
-    font-size: 9.5pt;
-    background: #f5f5f5;
+    background: #f8f9fa;
     border-radius: 1mm;
+    font-size: 10pt;
   }
 
-  .bill-info div {
-    margin-bottom: 1mm;
+  .bill-info > div {
+    margin-bottom: 2mm;
   }
 
-  /* ===============================
-     CUSTOMER INFO
-     =============================== */
-
+  /* Customer Info */
   .customer-info {
-    margin: 4mm 0;
+    margin: 5mm 0;
     padding: 3mm;
-    border: 0.5pt solid #ddd;
+    border: 0.5pt solid #dee2e6;
     border-radius: 1mm;
-    font-size: 9.5pt;
+    font-size: 10pt;
   }
 
   .customer-info h3 {
-    margin: 0 0 1.5mm 0;
-    font-size: 10.5pt;
-    font-weight: 600;
+    color: #D4AF37;
+    margin: 0 0 2mm 0;
+    font-size: 11pt;
   }
 
-  /* ===============================
-     ITEMS TABLE
-     =============================== */
-
-  table {
+  /* Items Table */
+  .items-table {
     width: 100%;
     border-collapse: collapse;
-    page-break-inside: avoid;
+    margin: 5mm 0;
+    font-size: 10pt;
   }
 
-  th, td {
-    border: 0.5pt solid #ccc;
+  .items-table th {
+    background: #D4AF37 !important;
+    color: white !important;
+    padding: 2mm;
+    text-align: left;
+    border: 0.5pt solid #B8860B;
+    font-weight: bold;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .items-table td {
     padding: 1.5mm;
-    font-size: 9.5pt;
+    border: 0.5pt solid #dee2e6;
   }
 
-  th {
-    background: #eaeaea;
-    font-weight: 600;
+  .items-table .total-row {
+    background: #f8f9fa !important;
+    font-weight: bold;
+    -webkit-print-color-adjust: exact;
   }
 
-  tr {
-    page-break-inside: avoid;
-  }
-
-  /* ===============================
-     CALCULATIONS
-     =============================== */
-
+  /* Calculations */
   .calculations {
-    margin-top: 4mm;
-    font-size: 9.5pt;
+    width: 100%;
+    margin: 5mm 0;
+    float: none;
   }
 
   .calc-row {
     display: flex;
     justify-content: space-between;
     padding: 1mm 0;
-    border-bottom: 0.5pt dashed #ccc;
+    border-bottom: 0.5pt dashed #ddd;
+    font-size: 10pt;
   }
 
   .calc-row.total {
-    border-top: 1pt solid #000;
+    font-size: 12pt;
+    font-weight: bold;
+    color: #D4AF37;
+    border-top: 1pt solid #D4AF37;
     border-bottom: none;
-    font-weight: 700;
-    font-size: 11pt;
     margin-top: 2mm;
     padding-top: 2mm;
   }
 
-  /* ===============================
-     AMOUNT IN WORDS
-     =============================== */
-
+  /* Amount in Words */
   .amount-words {
-    margin-top: 4mm;
+    clear: both;
+    margin: 5mm 0;
     padding: 3mm;
-    border: 0.5pt solid #ddd;
+    border: 0.5pt solid #dee2e6;
+    border-radius: 1mm;
     font-style: italic;
-    font-size: 9.5pt;
+    font-size: 10pt;
   }
 
-  /* ===============================
-     QR CODES
-     =============================== */
-
+  /* QR Codes */
   .qr-codes {
-    margin-top: 4mm;
-    padding-top: 3mm;
-    border-top: 0.5pt solid #ddd;
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    margin: 5mm 0;
+    padding-top: 5mm;
+    border-top: 0.5pt solid #dee2e6;
+  }
+
+  .qr-box {
+    text-align: center;
+    margin-bottom: 3mm;
+    width: 100%;
   }
 
   .qr-box img {
-    width: 35mm;
-    height: 35mm;
-    max-width: 35mm;
-    max-height: 35mm;
+    width: 40mm !important;
+    height: 40mm !important;
+    max-width: 40mm;
+    max-height: 40mm;
   }
 
-  /* ===============================
-     FOOTER & SIGNATURE
-     =============================== */
-
+  /* Footer */
   .invoice-footer {
-    margin-top: 4mm;
+    margin: 5mm 0 0 0;
     padding-top: 3mm;
-    border-top: 0.5pt solid #ddd;
+    border-top: 0.5pt solid #dee2e6;
     font-size: 9pt;
-    color: #555;
+    color: #666;
   }
 
   .signature {
-    margin-top: 5mm;
     display: flex;
     justify-content: space-between;
+    margin: 5mm 0;
   }
 
   .signature-box {
-    width: 48%;
     text-align: center;
-    font-size: 9pt;
+    width: 48%;
   }
 
   .signature-line {
-    margin: 3mm auto 1mm;
     width: 60mm;
     border-top: 0.5pt solid #000;
+    margin: 3mm auto 1mm;
   }
 
-  /* ===============================
-     SAFETY RULES
-     =============================== */
+  /* Page break helpers */
+  .page-break {
+    page-break-before: always;
+  }
 
+  .keep-together {
+    page-break-inside: avoid;
+  }
+
+  /* Force black and white for better printing */
   * {
     -webkit-print-color-adjust: exact !important;
+    color-adjust: exact !important;
     print-color-adjust: exact !important;
+  }
+
+  /* Avoid breaking inside important elements */
+  table {
+    page-break-inside: avoid;
+  }
+
+  tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+
+  /* Optimize for mobile printing */
+  @media (max-width: 480px) {
+    .invoice-container {
+      padding: 2mm;
+    }
+    
+    .shop-name {
+      font-size: 16pt;
+    }
+    
+    .items-table {
+      font-size: 9pt;
+    }
+    
+    .qr-box img {
+      width: 30mm !important;
+      height: 30mm !important;
+    }
   }
 }
 
-/* ===============================
-   SCREEN PREVIEW (OPTIONAL)
-   =============================== */
-
+/* Screen styles for print preview (optional) */
 @media screen {
   .print-container {
     display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: white;
+    z-index: 9999;
+    overflow-y: auto;
+    padding: 20px;
+  }
+  
+  .print-container .invoice-container {
+    max-width: 210mm;
+    margin: 0 auto;
+    padding: 20mm;
+    background: white;
+    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+  }
+  
+  .print-close-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #D4AF37;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    z-index: 10000;
   }
 }
