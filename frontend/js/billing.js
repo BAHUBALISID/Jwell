@@ -187,7 +187,7 @@ class BillingSystem {
         this.fixDropdowns();
     }
 
-    // ADDED THIS METHOD TO HANDLE CUSTOMER FORM UPDATES
+    // FIXED: Proper customer form listeners
     setupCustomerFormListeners() {
         // Listen to customer form input changes
         const customerFields = {
@@ -202,14 +202,16 @@ class BillingSystem {
         Object.entries(customerFields).forEach(([elementId, field]) => {
             const element = document.getElementById(elementId);
             if (element) {
+                // Add input event listener
                 element.addEventListener('input', (e) => {
                     this.currentBill.customer[field] = e.target.value;
-                    console.log(`Customer ${field} updated to:`, e.target.value); // Debug
+                    console.log(`Customer ${field} updated to:`, e.target.value);
                 });
                 
-                // Also update on blur for good measure
-                element.addEventListener('blur', (e) => {
+                // Also update on change event (for compatibility)
+                element.addEventListener('change', (e) => {
                     this.currentBill.customer[field] = e.target.value;
+                    console.log(`Customer ${field} changed to:`, e.target.value);
                 });
             }
         });
@@ -252,7 +254,7 @@ class BillingSystem {
 
     updateCustomer(field, value) {
         this.currentBill.customer[field] = value;
-        console.log(`Customer ${field} updated to:`, value); // Debug
+        console.log(`Customer ${field} updated to:`, value);
     }
 
     updateDiscount(value) {
@@ -719,6 +721,19 @@ class BillingSystem {
     validateBill() {
         console.log('Validating bill...', this.currentBill.customer); // Debug
         
+        // FIXED: Also check form inputs directly as fallback
+        const customerNameInput = document.getElementById('customerName');
+        const customerMobileInput = document.getElementById('customerMobile');
+        
+        // Update from inputs if needed
+        if (customerNameInput && !this.currentBill.customer.name?.trim()) {
+            this.currentBill.customer.name = customerNameInput.value.trim();
+        }
+        
+        if (customerMobileInput && !this.currentBill.customer.mobile?.trim()) {
+            this.currentBill.customer.mobile = customerMobileInput.value.trim();
+        }
+        
         if (!this.currentBill.customer.name?.trim()) {
             this.showAlert('danger', 'Customer name is required');
             return false;
@@ -770,8 +785,18 @@ class BillingSystem {
         btn.disabled = true;
         
         try {
+            // FIXED: Ensure all customer data is captured from form
+            const customerData = {
+                name: this.currentBill.customer.name || document.getElementById('customerName').value,
+                mobile: this.currentBill.customer.mobile || document.getElementById('customerMobile').value,
+                address: this.currentBill.customer.address || document.getElementById('customerAddress').value,
+                dob: this.currentBill.customer.dob || document.getElementById('customerDOB').value,
+                pan: this.currentBill.customer.pan || document.getElementById('customerPAN').value,
+                aadhaar: this.currentBill.customer.aadhaar || document.getElementById('customerAadhaar').value
+            };
+            
             const billData = {
-                customer: this.currentBill.customer,
+                customer: customerData,
                 items: this.currentBill.items.map(item => ({
                     description: item.description || '',
                     metalType: item.metalType,
@@ -794,6 +819,8 @@ class BillingSystem {
                 gstOnMetal: this.currentBill.gstOnMetal,
                 gstOnMaking: this.currentBill.gstOnMaking
             };
+            
+            console.log('Sending bill data:', billData);
             
             const response = await fetch(`${this.apiBase}/bills/create`, {
                 method: 'POST',
