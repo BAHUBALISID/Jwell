@@ -1,3 +1,5 @@
+//[file name]: billing.js
+//[file content begin]
 class BillingSystem {
     constructor() {
         this.apiBase = 'http://localhost:5000/api';
@@ -731,7 +733,7 @@ class BillingSystem {
             return false;
         }
         
-        // Check each item - FIXED: Now checking actual form fields for better accuracy
+        // Check each item
         for (let i = 0; i < this.currentBill.items.length; i++) {
             const item = this.currentBill.items[i];
             const itemRow = document.getElementById(item.id);
@@ -797,25 +799,49 @@ class BillingSystem {
         btn.disabled = true;
         
         try {
-            // Capture all customer data
+            // Capture all customer data with fallbacks
+            const customerName = document.getElementById('customerName').value.trim();
+            const customerMobile = document.getElementById('customerMobile').value.trim();
+            const customerAddress = document.getElementById('customerAddress').value.trim();
+            
+            if (!customerName || !customerMobile) {
+                throw new Error('Customer name and mobile are required');
+            }
+            
             const customerData = {
-                name: this.currentBill.customer.name || document.getElementById('customerName').value,
-                mobile: this.currentBill.customer.mobile || document.getElementById('customerMobile').value,
-                address: this.currentBill.customer.address || document.getElementById('customerAddress').value,
-                dob: this.currentBill.customer.dob || document.getElementById('customerDOB').value,
-                pan: this.currentBill.customer.pan || document.getElementById('customerPAN').value,
-                aadhaar: this.currentBill.customer.aadhaar || document.getElementById('customerAadhaar').value
+                name: customerName,
+                mobile: customerMobile,
+                address: customerAddress || 'Not provided',
+                dob: document.getElementById('customerDOB').value || '',
+                pan: document.getElementById('customerPAN').value || '',
+                aadhaar: document.getElementById('customerAadhaar').value || ''
             };
             
             // Prepare items data - ensure all required fields are present
-            const itemsData = this.currentBill.items.map(item => ({
-                description: item.description || '',
-                metalType: item.metalType,
-                purity: item.purity,
-                weight: item.weight,
-                makingCharges: item.makingCharges || 0,
-                makingChargesType: item.makingChargesType || 'percentage'
-            }));
+            const itemsData = [];
+            for (let i = 0; i < this.currentBill.items.length; i++) {
+                const item = this.currentBill.items[i];
+                const itemRow = document.getElementById(item.id);
+                
+                if (!itemRow) continue;
+                
+                const metalTypeSelect = itemRow.querySelector('.metal-type');
+                const puritySelect = itemRow.querySelector('.purity');
+                const weightInput = itemRow.querySelector('input[type="number"]:nth-of-type(1)');
+                const makingChargesInput = itemRow.querySelector('input[type="number"]:nth-of-type(2)');
+                const makingChargesTypeSelect = itemRow.querySelector('select:last-of-type');
+                
+                const itemData = {
+                    description: item.description || '',
+                    metalType: metalTypeSelect ? metalTypeSelect.value : item.metalType,
+                    purity: puritySelect ? puritySelect.value : item.purity,
+                    weight: weightInput ? parseFloat(weightInput.value) || 0 : item.weight,
+                    makingCharges: makingChargesInput ? parseFloat(makingChargesInput.value) || 0 : item.makingCharges,
+                    makingChargesType: makingChargesTypeSelect ? makingChargesTypeSelect.value : item.makingChargesType
+                };
+                
+                itemsData.push(itemData);
+            }
             
             // Prepare exchange items data
             const exchangeItemsData = this.currentBill.exchangeItems.map(item => ({
@@ -851,16 +877,26 @@ class BillingSystem {
             
             const data = await response.json();
             
+            console.log('Server response:', data);
+            
             if (data.success) {
                 this.showAlert('success', 'Bill generated successfully!');
                 this.showBillPreview(data.bill);
                 document.getElementById('printBillBtn').disabled = false;
             } else {
-                this.showAlert('danger', data.message || 'Failed to generate bill');
+                // Show detailed error message from server
+                let errorMessage = 'Failed to generate bill';
+                if (data.message) {
+                    errorMessage = data.message;
+                }
+                if (data.errors && Array.isArray(data.errors)) {
+                    errorMessage = data.errors.map(err => err.msg || err.message).join(', ');
+                }
+                throw new Error(errorMessage);
             }
         } catch (error) {
             console.error('Generate bill error:', error);
-            this.showAlert('danger', 'Network error. Please try again.');
+            this.showAlert('danger', error.message || 'Failed to generate bill. Please check console for details.');
         } finally {
             btn.innerHTML = originalText;
             btn.disabled = false;
