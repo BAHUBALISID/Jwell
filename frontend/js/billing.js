@@ -1088,166 +1088,167 @@ class BillingSystem {
         }
     }
 }
-
-    generatePrintHTML(bill) {
-        const regularItems = bill.items.filter(item => !item.isExchangeItem);
-        const exchangeItems = bill.items.filter(item => item.isExchangeItem);
-        
-        return `
-            <div class="invoice-container">
-                <div class="shop-name">Shri Mahakaleshwar Jewellers</div>
-                <div class="shop-address">Anisabad, Patna, Bihar - 800002</div>
-                <div class="shop-contact">Mobile: +91 9876543210 | GSTIN: 10ABCDE1234F1Z5</div>
-                
-                <div class="bill-info">
-                    <div>
-                        <div><strong>Bill No:</strong> ${bill.billNumber}</div>
-                        <div><strong>Date:</strong> ${new Date(bill.billDate).toLocaleDateString('en-IN')}</div>
-                    </div>
-                    <div>
-                        <div><strong>Invoice Type:</strong> ${bill.exchangeDetails.hasExchange ? 'Sale with Exchange' : 'Sale'}</div>
-                        <div><strong>Payment Mode:</strong> ${bill.paymentMode.toUpperCase()}</div>
-                        <div><strong>GST Type:</strong> ${bill.isIntraState ? 'CGST+SGST' : 'IGST'}</div>
-                    </div>
+generatePrintHTML(bill) {
+    const regularItems = bill.items.filter(item => !item.isExchangeItem);
+    const exchangeItems = bill.items.filter(item => item.isExchangeItem);
+    const gstDetails = bill.gstDetails || {};
+    
+    return `
+        <div class="invoice-container keep-together">
+            <div class="shop-name">Shri Mahakaleshwar Jewellers</div>
+            <div class="shop-address">Anisabad, Patna, Bihar - 800002</div>
+            <div class="shop-contact">Mobile: +91 9876543210 | GSTIN: 10ABCDE1234F1Z5</div>
+            
+            <div class="bill-info">
+                <div>
+                    <div class="bill-number"><strong>Bill No:</strong> ${bill.billNumber}</div>
+                    <div class="bill-date"><strong>Date:</strong> ${new Date(bill.billDate).toLocaleDateString('en-IN')}</div>
                 </div>
-                
-                <div style="margin: 20px 0;">
-                    <h4>Customer Details</h4>
-                    <p><strong>Name:</strong> ${bill.customer.name}</p>
-                    <p><strong>Mobile:</strong> ${bill.customer.mobile}</p>
-                    ${bill.customer.address ? `<p><strong>Address:</strong> ${bill.customer.address}</p>` : ''}
-                    ${bill.customer.pan ? `<p><strong>PAN:</strong> ${bill.customer.pan}</p>` : ''}
-                    ${bill.customer.aadhaar ? `<p><strong>Aadhaar:</strong> ${bill.customer.aadhaar}</p>` : ''}
-                    ${bill.customer.dob ? `<p><strong>Date of Birth:</strong> ${new Date(bill.customer.dob).toLocaleDateString('en-IN')}</p>` : ''}
+                <div>
+                    <div><strong>Invoice Type:</strong> ${bill.exchangeDetails?.hasExchange ? 'Sale with Exchange' : 'Sale'}</div>
+                    <div><strong>Payment Mode:</strong> ${bill.paymentMode?.toUpperCase() || 'CASH'}</div>
+                    <div><strong>GST Type:</strong> ${bill.isIntraState ? 'CGST+SGST' : 'IGST'}</div>
                 </div>
-                
-                <h4>Items</h4>
-                <table>
+            </div>
+            
+            <div class="customer-info">
+                <h3>Customer Details</h3>
+                <p><strong>Name:</strong> ${bill.customer.name}</p>
+                <p><strong>Mobile:</strong> ${bill.customer.mobile}</p>
+                ${bill.customer.address ? `<p><strong>Address:</strong> ${bill.customer.address}</p>` : ''}
+                ${bill.customer.pan ? `<p><strong>PAN:</strong> ${bill.customer.pan}</p>` : ''}
+                ${bill.customer.aadhaar ? `<p><strong>Aadhaar:</strong> ${bill.customer.aadhaar}</p>` : ''}
+                ${bill.customer.dob ? `<p><strong>Date of Birth:</strong> ${new Date(bill.customer.dob).toLocaleDateString('en-IN')}</p>` : ''}
+            </div>
+            
+            <h3 style="margin: 5mm 0 2mm 0; color: #D4AF37;">Items</h3>
+            <table class="items-table">
+                <thead>
+                    <tr>
+                        <th>Description</th>
+                        <th>Metal & Purity</th>
+                        <th>Weight</th>
+                        <th>Amount (₹)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${regularItems.map(item => `
+                        <tr>
+                            <td>${item.description || ''}</td>
+                            <td>${item.metalType} ${item.purity}</td>
+                            <td>${item.weight.toFixed(3)} ${item.metalType === 'Diamond' ? 'ct' : 'g'}</td>
+                            <td>₹${item.amount.toFixed(2)}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+            
+            ${exchangeItems.length > 0 ? `
+                <h3 style="margin: 5mm 0 2mm 0; color: #D4AF37;">Exchange Items</h3>
+                <table class="items-table">
                     <thead>
                         <tr>
                             <th>Description</th>
                             <th>Metal & Purity</th>
                             <th>Weight</th>
-                            <th>Amount (₹)</th>
+                            <th>Value (₹)</th>
                         </tr>
                     </thead>
                     <tbody>
-                        ${regularItems.map(item => `
+                        ${exchangeItems.map(item => `
                             <tr>
-                                <td>${item.description || ''}</td>
+                                <td>${item.description || 'Old Item'}</td>
                                 <td>${item.metalType} ${item.purity}</td>
                                 <td>${item.weight.toFixed(3)} ${item.metalType === 'Diamond' ? 'ct' : 'g'}</td>
-                                <td>₹${item.amount.toFixed(2)}</td>
+                                <td>-₹${Math.abs(item.amount).toFixed(2)}</td>
                             </tr>
                         `).join('')}
                     </tbody>
                 </table>
-                
-                ${exchangeItems.length > 0 ? `
-                    <h4>Exchange Items</h4>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Description</th>
-                                <th>Metal & Purity</th>
-                                <th>Weight</th>
-                                <th>Value (₹)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${exchangeItems.map(item => `
-                                <tr>
-                                    <td>${item.description || 'Old Item'}</td>
-                                    <td>${item.metalType} ${item.purity}</td>
-                                    <td>${item.weight.toFixed(3)} ${item.metalType === 'Diamond' ? 'ct' : 'g'}</td>
-                                    <td>-₹${Math.abs(item.amount).toFixed(2)}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
+            ` : ''}
+            
+            <div class="calculations">
+                <div class="calc-row">
+                    <span>Metal Value:</span>
+                    <span>₹${(gstDetails.metalAmount || 0).toFixed(2)}</span>
+                </div>
+                <div class="calc-row">
+                    <span>Making Charges:</span>
+                    <span>₹${(gstDetails.makingCharges || 0).toFixed(2)}</span>
+                </div>
+                <div class="calc-row">
+                    <span>Sub Total:</span>
+                    <span>₹${((gstDetails.metalAmount || 0) + (gstDetails.makingCharges || 0)).toFixed(2)}</span>
+                </div>
+                <div class="calc-row">
+                    <span>Discount:</span>
+                    <span>-₹${(bill.discount || 0).toFixed(2)}</span>
+                </div>
+                <div class="calc-row">
+                    <span>GST on Metal (${gstDetails.gstOnMetalRate || 3}%):</span>
+                    <span>₹${(gstDetails.gstOnMetal || 0).toFixed(2)}</span>
+                </div>
+                <div class="calc-row">
+                    <span>GST on Making (${gstDetails.gstOnMakingRate || 5}%):</span>
+                    <span>₹${(gstDetails.gstOnMaking || 0).toFixed(2)}</span>
+                </div>
+                ${bill.exchangeDetails?.hasExchange ? `
+                    <div class="calc-row">
+                        <span>Old Items Value:</span>
+                        <span>₹${(bill.exchangeDetails.oldItemsTotal || 0).toFixed(2)}</span>
+                    </div>
                 ` : ''}
-                
-                <div style="margin: 20px 0; padding: 20px; background: #f5f5f5;">
-                    <div class="calc-row">
-                        <span>Metal Value:</span>
-                        <span>₹${(bill.gstDetails?.metalAmount || 0).toFixed(2)}</span>
-                    </div>
-                    <div class="calc-row">
-                        <span>Making Charges:</span>
-                        <span>₹${(bill.gstDetails?.makingCharges || 0).toFixed(2)}</span>
-                    </div>
-                    <div class="calc-row">
-                        <span>Sub Total:</span>
-                        <span>₹${((bill.gstDetails?.metalAmount || 0) + (bill.gstDetails?.makingCharges || 0)).toFixed(2)}</span>
-                    </div>
-                    <div class="calc-row">
-                        <span>Discount:</span>
-                        <span>-₹${bill.discount.toFixed(2)}</span>
-                    </div>
-                    <div class="calc-row">
-                        <span>GST on Metal (${bill.gstDetails?.gstOnMetal || 3}%):</span>
-                        <span>₹${(bill.gstDetails?.gstOnMetal || 0).toFixed(2)}</span>
-                    </div>
-                    <div class="calc-row">
-                        <span>GST on Making (${bill.gstDetails?.gstOnMaking || 5}%):</span>
-                        <span>₹${(bill.gstDetails?.gstOnMaking || 0).toFixed(2)}</span>
-                    </div>
-                    ${bill.exchangeDetails.hasExchange ? `
-                        <div class="calc-row">
-                            <span>Old Items Value:</span>
-                            <span>₹${bill.exchangeDetails.oldItemsTotal.toFixed(2)}</span>
-                        </div>
-                    ` : ''}
-                    <div class="calc-row total">
-                        <span>${bill.exchangeDetails.hasExchange ? 'Balance ' : 'Grand '}Total:</span>
-                        <span>₹${bill.grandTotal.toFixed(2)}</span>
-                    </div>
-                    ${bill.exchangeDetails.hasExchange ? `
-                        <div class="calc-row">
-                            <span>${bill.exchangeDetails.balancePayable > 0 ? 'Amount Payable:' : 'Amount Refundable:'}</span>
-                            <span>₹${Math.max(bill.exchangeDetails.balancePayable, bill.exchangeDetails.balanceRefundable).toFixed(2)}</span>
-                        </div>
-                    ` : ''}
+                <div class="calc-row total">
+                    <span>${bill.exchangeDetails?.hasExchange ? 'Balance ' : 'Grand '}Total:</span>
+                    <span>₹${(bill.grandTotal || 0).toFixed(2)}</span>
                 </div>
-                
-                <div style="margin: 20px 0; padding: 15px; border-top: 2px solid #000;">
-                    <p><strong>Amount in Words:</strong> ${bill.amountInWords}</p>
-                </div>
-                
-                <div style="text-align: center; margin: 30px 0;">
-                    <div style="display: inline-block; padding: 20px; background: white; border: 1px solid #ddd;">
-                        <h5>Bill QR Code</h5>
-                        <img src="data:image/png;base64,${bill.qrCodes?.billQR || ''}" 
-                             alt="QR Code" style="width: 150px; height: 150px;">
+                ${bill.exchangeDetails?.hasExchange ? `
+                    <div class="calc-row">
+                        <span>${bill.exchangeDetails.balancePayable > 0 ? 'Amount Payable:' : 'Amount Refundable:'}</span>
+                        <span>₹${Math.max(bill.exchangeDetails.balancePayable || 0, bill.exchangeDetails.balanceRefundable || 0).toFixed(2)}</span>
+                    </div>
+                ` : ''}
+            </div>
+            
+            <div class="amount-words">
+                <p><strong>Amount in Words:</strong> ${bill.amountInWords || 'Zero Rupees Only'}</p>
+            </div>
+            
+            <div class="qr-codes">
+                ${bill.qrCodes?.billQR ? `
+                    <div class="qr-box">
+                        <h4>Bill QR Code</h4>
+                        <img src="data:image/png;base64,${bill.qrCodes.billQR}" alt="Bill QR Code">
                         <p>Scan for bill details</p>
                     </div>
-                </div>
-                
-                <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #000;">
-                    <div style="float: left; width: 45%;">
-                        <p>_____________________</p>
+                ` : ''}
+            </div>
+            
+            <div class="invoice-footer">
+                <div class="signature">
+                    <div class="signature-box">
+                        <div class="signature-line"></div>
                         <p>Customer Signature</p>
                     </div>
-                    <div style="float: right; width: 45%; text-align: right;">
-                        <p>_____________________</p>
+                    <div class="signature-box">
+                        <div class="signature-line"></div>
                         <p>Authorized Signature</p>
                         <p>For Shri Mahakaleshwar Jewellers</p>
                     </div>
-                    <div style="clear: both;"></div>
                 </div>
                 
-                <div style="margin-top: 30px; font-size: 12px; color: #666;">
+                <div class="terms">
                     <p><strong>Terms & Conditions:</strong></p>
                     <p>1. Goods once sold will not be taken back or exchanged.</p>
                     <p>2. All disputes subject to Patna jurisdiction only.</p>
                     <p>3. Certification charges extra if any.</p>
                     <p>4. Making charges are non-refundable.</p>
-                    <p style="text-align: center; margin-top: 20px;">Thank you for your business! Visit again.</p>
+                    <p style="text-align: center; margin-top: 5mm;">Thank you for your business! Visit again.</p>
                 </div>
             </div>
-        `;
-    }
-
+        </div>
+    `;
+}             
     clearForm() {
         if (!confirm('Are you sure you want to clear the form? All data will be lost.')) {
             return;
