@@ -14,7 +14,13 @@ exports.createBill = async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      return res.status(400).json({ 
+        success: false,
+        errors: errors.array().map(err => ({ 
+          field: err.path, 
+          message: err.msg 
+        }))
+      });
     }
 
     const {
@@ -28,6 +34,53 @@ exports.createBill = async (req, res) => {
       gstOnMetal = 3,
       gstOnMaking = 5
     } = req.body;
+
+    // FIXED: Clean up optional fields - set to empty string if undefined or empty
+    if (customer) {
+      customer.address = customer.address || '';
+      customer.dob = customer.dob || '';
+      customer.pan = customer.pan || '';
+      customer.aadhaar = customer.aadhaar || '';
+      
+      // Validate optional fields only if they have content
+      if (customer.dob && customer.dob.trim() !== '') {
+        const dobDate = new Date(customer.dob);
+        if (isNaN(dobDate.getTime())) {
+          return res.status(400).json({
+            success: false,
+            message: 'Invalid date format for Date of Birth'
+          });
+        }
+      }
+      
+      if (customer.pan && customer.pan.trim() !== '') {
+        const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+        if (!panRegex.test(customer.pan)) {
+          return res.status(400).json({
+            success: false,
+            message: 'Invalid PAN format. Should be ABCDE1234F format'
+          });
+        }
+      }
+      
+      if (customer.aadhaar && customer.aadhaar.trim() !== '') {
+        const aadhaarRegex = /^[0-9]{12}$/;
+        if (!aadhaarRegex.test(customer.aadhaar)) {
+          return res.status(400).json({
+            success: false,
+            message: 'Invalid Aadhaar number. Should be 12 digits'
+          });
+        }
+      }
+    }
+
+    // Validate items
+    if (!items || items.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'At least one item is required'
+      });
+    }
 
     // Generate bill number
     const billNumber = await generateBillNumber();
