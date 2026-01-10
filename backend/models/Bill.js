@@ -15,6 +15,28 @@ const itemSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  // NEW: Unit field
+  unit: {
+    type: String,
+    enum: ['PCS', 'GM'],
+    default: 'GM'
+  },
+  // NEW: Quantity field
+  quantity: {
+    type: Number,
+    default: 1
+  },
+  // NEW: Gross Weight field
+  grossWeight: {
+    type: Number,
+    default: 0
+  },
+  // NEW: Less Weight field
+  lessWeight: {
+    type: Number,
+    default: 0
+  },
+  // UPDATED: Weight becomes Net Weight
   weight: {
     type: Number,
     required: true
@@ -23,14 +45,20 @@ const itemSchema = new mongoose.Schema({
     type: Number,
     required: true
   },
+  // UPDATED: Making Charge Type
   makingChargesType: {
     type: String,
-    enum: ['percentage', 'fixed'],
+    enum: ['percentage', 'fixed', 'GRM'],
     default: 'percentage'
   },
   makingCharges: {
     type: Number,
     required: true
+  },
+  // NEW: Discount on Making
+  makingChargesDiscount: {
+    type: Number,
+    default: 0
   },
   makingChargesAmount: {
     type: Number,
@@ -41,6 +69,14 @@ const itemSchema = new mongoose.Schema({
     required: true
   },
   image: {
+    type: String
+  },
+  // NEW: HUID / Hallmark ID
+  huid: {
+    type: String
+  },
+  // NEW: Tunch (Purity Touch)
+  tunch: {
     type: String
   },
   isExchangeItem: {
