@@ -121,12 +121,23 @@ exports.createBill = async (req, res) => {
         perGramRate = rateInfo.rate / 1000;
       }
       
+      // Calculate net weight if gross and less weight provided
+      let netWeight = item.weight;
+      if (item.grossWeight && item.lessWeight) {
+        netWeight = item.grossWeight - item.lessWeight;
+      }
+      
       // Use item's GST rates or default from request
       const itemGstOnMaking = item.gstOnMaking || gstOnMaking;
       const itemGstOnMetal = item.gstOnMetal || gstOnMetal;
       
       const itemCalc = calculateItemAmount(
-        { ...item, rate: perGramRate }, 
+        { 
+          ...item, 
+          rate: perGramRate,
+          weight: netWeight,
+          makingChargesDiscount: item.makingChargesDiscount || 0
+        }, 
         perGramRate, 
         itemGstOnMaking,
         itemGstOnMetal,
@@ -135,8 +146,15 @@ exports.createBill = async (req, res) => {
       
       calculatedItems.push({
         ...item,
+        // NEW: Include the additional fields
+        unit: item.unit || 'GM',
+        quantity: item.quantity || 1,
+        grossWeight: item.grossWeight || 0,
+        lessWeight: item.lessWeight || 0,
+        weight: netWeight,
         rate: perGramRate,
         makingChargesAmount: itemCalc.makingCharges,
+        makingChargesDiscount: item.makingChargesDiscount || 0,
         gstOnMaking: itemGstOnMaking,
         gstOnMetal: itemGstOnMetal,
         amount: itemCalc.total,
@@ -150,7 +168,9 @@ exports.createBill = async (req, res) => {
           igstOnMaking: itemCalc.gstOnMakingIGST
         },
         metalAmount: itemCalc.metalAmount,
-        makingCharges: itemCalc.makingCharges
+        makingCharges: itemCalc.makingCharges,
+        huid: item.huid || '',
+        tunch: item.tunch || ''
       });
 
       subTotal += itemCalc.total;
@@ -655,8 +675,19 @@ exports.calculateBill = async (req, res) => {
         perGramRate = rateInfo.rate / 1000;
       }
       
+      // Calculate net weight if gross and less weight provided
+      let netWeight = item.weight;
+      if (item.grossWeight && item.lessWeight) {
+        netWeight = item.grossWeight - item.lessWeight;
+      }
+      
       const itemCalc = calculateItemAmount(
-        { ...item, rate: perGramRate }, 
+        { 
+          ...item, 
+          rate: perGramRate,
+          weight: netWeight,
+          makingChargesDiscount: item.makingChargesDiscount || 0
+        }, 
         perGramRate, 
         gstOnMaking,
         gstOnMetal,
@@ -665,14 +696,22 @@ exports.calculateBill = async (req, res) => {
       
       calculatedItems.push({
         ...item,
+        unit: item.unit || 'GM',
+        quantity: item.quantity || 1,
+        grossWeight: item.grossWeight || 0,
+        lessWeight: item.lessWeight || 0,
+        weight: netWeight,
         rate: perGramRate,
         makingChargesAmount: itemCalc.makingCharges,
+        makingChargesDiscount: item.makingChargesDiscount || 0,
         amount: itemCalc.total,
         metalAmount: itemCalc.metalAmount,
         makingCharges: itemCalc.makingCharges,
         gstOnItem: isIntraState ? 
           (itemCalc.gstOnMetalCGST + itemCalc.gstOnMetalSGST + itemCalc.gstOnMakingCGST + itemCalc.gstOnMakingSGST) :
-          (itemCalc.gstOnMetalIGST + itemCalc.gstOnMakingIGST)
+          (itemCalc.gstOnMetalIGST + itemCalc.gstOnMakingIGST),
+        huid: item.huid || '',
+        tunch: item.tunch || ''
       });
 
       subTotal += itemCalc.total;
