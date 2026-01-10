@@ -69,17 +69,30 @@ const numberToWords = (num) => {
 const calculateItemAmount = (item, ratePerGram, gstOnMakingCharges = 5, gstOnMetal = 3, isIntraState = true) => {
   let metalAmount = 0;
   
+  // Calculate metal amount based on unit
   if (item.metalType === 'Diamond') {
-    metalAmount = item.rate * item.weight;
+    // Diamond is usually in carats, but for our system we'll use weight
+    metalAmount = ratePerGram * item.weight;
   } else {
     metalAmount = ratePerGram * item.weight;
   }
   
   let makingCharges = 0;
+  
+  // Calculate making charges based on type
   if (item.makingChargesType === 'percentage') {
     makingCharges = (metalAmount * item.makingCharges) / 100;
+  } else if (item.makingChargesType === 'GRM') {
+    // Per gram making charge
+    makingCharges = item.makingCharges * item.weight;
   } else {
+    // Fixed making charge
     makingCharges = item.makingCharges;
+  }
+  
+  // Apply discount on making charges if any
+  if (item.makingChargesDiscount && item.makingChargesDiscount > 0) {
+    makingCharges = makingCharges - (makingCharges * item.makingChargesDiscount / 100);
   }
   
   // Calculate GST on making charges (5%) and metal (3%)
@@ -88,7 +101,6 @@ const calculateItemAmount = (item, ratePerGram, gstOnMakingCharges = 5, gstOnMet
   
   // For intra-state: CGST + SGST (half each), For inter-state: IGST (full)
   if (isIntraState) {
-    // Split GST equally between CGST and SGST
     return {
       metalAmount,
       makingCharges,
@@ -99,7 +111,6 @@ const calculateItemAmount = (item, ratePerGram, gstOnMakingCharges = 5, gstOnMet
       total: metalAmount + makingCharges + gstOnMaking + gstOnMetalAmount
     };
   } else {
-    // IGST - full amount
     return {
       metalAmount,
       makingCharges,
