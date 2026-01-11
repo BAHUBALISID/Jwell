@@ -95,11 +95,8 @@ const calculateItemAmount = (item, ratePerGram, gstOnMakingCharges = 5, gstOnMet
     makingCharges = makingCharges - (makingCharges * item.makingChargesDiscount / 100);
   }
   
-  // Add item HUID charges
-  const itemHuidCharges = item.itemHuidCharges || 0;
-  
-  // Calculate GST on making charges (including HUID charges) and metal
-  const gstOnMaking = ((makingCharges + itemHuidCharges) * gstOnMakingCharges) / 100;
+  // Calculate GST on making charges and metal
+  const gstOnMaking = (makingCharges * gstOnMakingCharges) / 100;
   const gstOnMetalAmount = (metalAmount * gstOnMetal) / 100;
   
   // For intra-state: CGST + SGST (half each), For inter-state: IGST (full)
@@ -108,22 +105,20 @@ const calculateItemAmount = (item, ratePerGram, gstOnMakingCharges = 5, gstOnMet
     return {
       metalAmount,
       makingCharges,
-      itemHuidCharges,
       gstOnMakingCGST: gstOnMaking / 2,
       gstOnMakingSGST: gstOnMaking / 2,
       gstOnMetalCGST: gstOnMetalAmount / 2,
       gstOnMetalSGST: gstOnMetalAmount / 2,
-      total: metalAmount + makingCharges + itemHuidCharges + gstOnMaking + gstOnMetalAmount
+      total: metalAmount + makingCharges + gstOnMaking + gstOnMetalAmount
     };
   } else {
     // IGST - full amount
     return {
       metalAmount,
       makingCharges,
-      itemHuidCharges,
       gstOnMakingIGST: gstOnMaking,
       gstOnMetalIGST: gstOnMetalAmount,
-      total: metalAmount + makingCharges + itemHuidCharges + gstOnMaking + gstOnMetalAmount
+      total: metalAmount + makingCharges + gstOnMaking + gstOnMetalAmount
     };
   }
 };
