@@ -14,12 +14,12 @@ class BillingSystem {
             items: [],
             exchangeItems: [],
             discount: 0,
-            discountType: 'amount', // 'amount' or 'percentage'
+            discountType: 'amount',
             paymentMode: 'cash',
             isIntraState: true,
             gstOnMetal: 3,
             gstOnMaking: 5,
-            huidCharges: 0 // NEW: HUID Charges field
+            huidCharges: 0 // Only bill-level HUID charges
         };
         this.rates = {};
         this.metalPurities = {
@@ -176,7 +176,7 @@ class BillingSystem {
             this.updateHuidCharges(e.target.value);
         });
 
-        // GST Metal Select - CHANGED: "None" instead of "Custom"
+        // GST Metal Select
         document.getElementById('gstMetalSelect').addEventListener('change', (e) => {
             const value = e.target.value;
             document.getElementById('gstMetalInput').style.display = 'none';
@@ -184,7 +184,7 @@ class BillingSystem {
             this.handleGSTRateChange('metal', value);
         });
 
-        // GST Making Select - CHANGED: "None" instead of "Custom"
+        // GST Making Select
         document.getElementById('gstMakingSelect').addEventListener('change', (e) => {
             const value = e.target.value;
             document.getElementById('gstMakingInput').style.display = 'none';
@@ -192,7 +192,7 @@ class BillingSystem {
             this.handleGSTRateChange('making', value);
         });
 
-        // Grand Total Input - NEW: Editable total amount
+        // Grand Total Input
         document.getElementById('grandTotal').addEventListener('input', (e) => {
             this.handleGrandTotalChange(e.target.value);
         });
@@ -329,7 +329,6 @@ class BillingSystem {
         this.updateSummary();
     }
 
-    // NEW: Handle manual total amount change
     handleGrandTotalChange(value) {
         const newTotal = parseFloat(value) || 0;
         
@@ -488,10 +487,6 @@ class BillingSystem {
                     <input type="text" class="form-control huid" placeholder="HUID/Hallmark" 
                            oninput="window.billingSystem.handleItemInput('${itemId}', 'huid', this.value, false)">
                 </div>
-                <div data-label="HUID Charges">
-                    <input type="number" class="form-control item-huid-charges" step="0.01" placeholder="HUID Charges" 
-                           oninput="window.billingSystem.handleItemInput('${itemId}', 'itemHuidCharges', this.value, false)">
-                </div>
                 <div data-label="Tunch">
                     <input type="text" class="form-control tunch" placeholder="Tunch" 
                            oninput="window.billingSystem.handleItemInput('${itemId}', 'tunch', this.value, false)">
@@ -519,7 +514,6 @@ class BillingSystem {
                 makingChargesType: 'percentage',
                 makingChargesDiscount: 0,
                 huid: '',
-                itemHuidCharges: 0, // NEW: Individual item HUID charges
                 tunch: ''
             });
         }
@@ -571,7 +565,7 @@ class BillingSystem {
             this.currentBill.items.find(i => i.id === itemId);
         
         if (item) {
-            if (['weight', 'makingCharges', 'wastageDeduction', 'meltingCharges', 'makingChargesDiscount', 'quantity', 'grossWeight', 'lessWeight', 'rate', 'itemHuidCharges'].includes(field)) {
+            if (['weight', 'makingCharges', 'wastageDeduction', 'meltingCharges', 'makingChargesDiscount', 'quantity', 'grossWeight', 'lessWeight', 'rate'].includes(field)) {
                 item[field] = parseFloat(value) || 0;
             } else {
                 item[field] = value;
@@ -652,7 +646,7 @@ class BillingSystem {
                 if (row.classList.contains('exchange-row')) {
                     row.style.gridTemplateColumns = '2fr 1fr 1fr 1fr 1fr 1fr 1fr auto';
                 } else {
-                    row.style.gridTemplateColumns = '2fr 1fr 1fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr auto';
+                    row.style.gridTemplateColumns = '2fr 1fr 1fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr auto';
                 }
             }
         });
@@ -662,7 +656,7 @@ class BillingSystem {
         try {
             let metalValue = 0;
             let makingCharges = 0;
-            let huidChargesTotal = this.currentBill.huidCharges || 0; // Include bill-level HUID charges
+            let huidChargesTotal = this.currentBill.huidCharges || 0;
             let gstOnMetal = 0;
             let gstOnMaking = 0;
             let subTotal = 0;
@@ -698,14 +692,10 @@ class BillingSystem {
                         itemMakingCharges = itemMakingCharges - (itemMakingCharges * item.makingChargesDiscount / 100);
                     }
                     
-                    // Add individual item HUID charges
-                    const itemHuidCharges = item.itemHuidCharges || 0;
-                    huidChargesTotal += itemHuidCharges;
-                    
                     const itemGstOnMetal = (itemMetalValue * this.currentBill.gstOnMetal) / 100;
                     const itemGstOnMaking = (itemMakingCharges * this.currentBill.gstOnMaking) / 100;
                     
-                    const itemTotal = itemMetalValue + itemMakingCharges + itemHuidCharges + itemGstOnMetal + itemGstOnMaking;
+                    const itemTotal = itemMetalValue + itemMakingCharges + itemGstOnMetal + itemGstOnMaking;
                     
                     metalValue += itemMetalValue;
                     makingCharges += itemMakingCharges;
@@ -786,7 +776,7 @@ class BillingSystem {
             // Update discount display
             document.getElementById('discount').placeholder = this.currentBill.discountType === 'percentage' ? '%' : '₹';
             
-            // Update GST display - Hide input when "None" is selected
+            // Update GST display
             document.getElementById('gstMetalSelect').value = this.currentBill.gstOnMetal;
             document.getElementById('gstMakingSelect').value = this.currentBill.gstOnMaking;
             
@@ -961,7 +951,6 @@ class BillingSystem {
             const rateInput = itemRow.querySelector('.rate');
             const makingDiscountInput = itemRow.querySelector('.making-discount');
             const huidInput = itemRow.querySelector('.huid');
-            const itemHuidChargesInput = itemRow.querySelector('.item-huid-charges');
             const tunchInput = itemRow.querySelector('.tunch');
             
             // Update item data from form fields
@@ -1013,10 +1002,6 @@ class BillingSystem {
                 item.huid = huidInput.value;
             }
             
-            if (itemHuidChargesInput) {
-                item.itemHuidCharges = parseFloat(itemHuidChargesInput.value) || 0;
-            }
-            
             if (tunchInput) {
                 item.tunch = tunchInput.value;
             }
@@ -1043,7 +1028,7 @@ class BillingSystem {
             }
             
             if (!item.makingChargesType || !['percentage', 'fixed', 'GRM'].includes(item.makingChargesType)) {
-                item.makingChargesType = 'percentage'; // Default value
+                item.makingChargesType = 'percentage';
             }
         }
         
@@ -1073,7 +1058,7 @@ class BillingSystem {
                 throw new Error('Customer name and mobile are required');
             }
             
-            // Prepare customer data - ensure optional fields are empty strings if not provided
+            // Prepare customer data
             const customerData = {
                 name: customerName,
                 mobile: customerMobile,
@@ -1083,7 +1068,7 @@ class BillingSystem {
                 aadhaar: customerAadhaar || ''
             };
             
-            // Prepare items data - ensure all required fields are present
+            // Prepare items data
             const itemsData = [];
             for (let i = 0; i < this.currentBill.items.length; i++) {
                 const item = this.currentBill.items[i];
@@ -1103,7 +1088,6 @@ class BillingSystem {
                 const makingChargesTypeSelect = itemRow.querySelector('.making-charges-type');
                 const makingDiscountInput = itemRow.querySelector('.making-discount');
                 const huidInput = itemRow.querySelector('.huid');
-                const itemHuidChargesInput = itemRow.querySelector('.item-huid-charges');
                 const tunchInput = itemRow.querySelector('.tunch');
                 
                 const itemData = {
@@ -1120,11 +1104,9 @@ class BillingSystem {
                     makingChargesType: makingChargesTypeSelect ? makingChargesTypeSelect.value : item.makingChargesType || 'percentage',
                     makingChargesDiscount: makingDiscountInput ? parseFloat(makingDiscountInput.value) || 0 : item.makingChargesDiscount,
                     huid: huidInput ? huidInput.value : item.huid || '',
-                    itemHuidCharges: itemHuidChargesInput ? parseFloat(itemHuidChargesInput.value) || 0 : item.itemHuidCharges || 0,
                     tunch: tunchInput ? tunchInput.value : item.tunch || ''
                 };
                 
-                // Validate makingChargesType
                 if (!['percentage', 'fixed', 'GRM'].includes(itemData.makingChargesType)) {
                     itemData.makingChargesType = 'percentage';
                 }
@@ -1145,7 +1127,6 @@ class BillingSystem {
             // Calculate discount amount
             let discountAmount = 0;
             if (this.currentBill.discountType === 'percentage') {
-                // We'll calculate percentage discount on server side based on metal value + making charges
                 discountAmount = this.currentBill.discount;
             } else {
                 discountAmount = this.currentBill.discount || 0;
@@ -1161,7 +1142,7 @@ class BillingSystem {
                 isIntraState: this.currentBill.isIntraState,
                 gstOnMetal: this.currentBill.gstOnMetal,
                 gstOnMaking: this.currentBill.gstOnMaking,
-                huidCharges: this.currentBill.huidCharges || 0 // Include HUID charges
+                huidCharges: this.currentBill.huidCharges || 0
             };
             
             console.log('Sending bill data:', billData);
@@ -1184,7 +1165,6 @@ class BillingSystem {
                 this.showBillPreview(data.bill);
                 document.getElementById('printBillBtn').disabled = false;
             } else {
-                // Show detailed error message from server
                 let errorMessage = 'Failed to generate bill';
                 if (data.message) {
                     errorMessage = data.message;
@@ -1217,7 +1197,6 @@ class BillingSystem {
         document.getElementById('previewInvoiceType').textContent = 
             bill.exchangeDetails.hasExchange ? 'Sale with Exchange' : 'Sale';
         
-        // FIXED: Use gstDetails from bill response with fallbacks
         const gstDetails = bill.gstDetails || {};
         const metalAmount = gstDetails.metalAmount || 0;
         const makingCharges = gstDetails.makingCharges || 0;
@@ -1227,7 +1206,6 @@ class BillingSystem {
         const gstOnMakingRate = gstDetails.gstOnMakingRate || bill.gstOnMaking || 5;
         const huidCharges = bill.huidCharges || 0;
         
-        // Calculate values if not directly available
         const metalValue = metalAmount || (bill.grandTotal - gstOnMetal - gstOnMaking - bill.discount - makingCharges - huidCharges);
         const makingChargesAmount = makingCharges || 0;
         
@@ -1549,7 +1527,7 @@ class BillingSystem {
                 </div>
             </div>
         `;
-    }             
+    }
     
     clearForm() {
         if (!confirm('Are you sure you want to clear the form? All data will be lost.')) {
