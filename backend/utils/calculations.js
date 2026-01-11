@@ -95,28 +95,35 @@ const calculateItemAmount = (item, ratePerGram, gstOnMakingCharges = 5, gstOnMet
     makingCharges = makingCharges - (makingCharges * item.makingChargesDiscount / 100);
   }
   
-  // Calculate GST on making charges (5%) and metal (3%)
-  const gstOnMaking = (makingCharges * gstOnMakingCharges) / 100;
+  // Add item HUID charges
+  const itemHuidCharges = item.itemHuidCharges || 0;
+  
+  // Calculate GST on making charges (including HUID charges) and metal
+  const gstOnMaking = ((makingCharges + itemHuidCharges) * gstOnMakingCharges) / 100;
   const gstOnMetalAmount = (metalAmount * gstOnMetal) / 100;
   
   // For intra-state: CGST + SGST (half each), For inter-state: IGST (full)
   if (isIntraState) {
+    // Split GST equally between CGST and SGST
     return {
       metalAmount,
       makingCharges,
+      itemHuidCharges,
       gstOnMakingCGST: gstOnMaking / 2,
       gstOnMakingSGST: gstOnMaking / 2,
       gstOnMetalCGST: gstOnMetalAmount / 2,
       gstOnMetalSGST: gstOnMetalAmount / 2,
-      total: metalAmount + makingCharges + gstOnMaking + gstOnMetalAmount
+      total: metalAmount + makingCharges + itemHuidCharges + gstOnMaking + gstOnMetalAmount
     };
   } else {
+    // IGST - full amount
     return {
       metalAmount,
       makingCharges,
+      itemHuidCharges,
       gstOnMakingIGST: gstOnMaking,
       gstOnMetalIGST: gstOnMetalAmount,
-      total: metalAmount + makingCharges + gstOnMaking + gstOnMetalAmount
+      total: metalAmount + makingCharges + itemHuidCharges + gstOnMaking + gstOnMetalAmount
     };
   }
 };
@@ -140,32 +147,34 @@ const calculateExchangeValue = (oldItem, currentRate) => {
   return Math.max(0, grossValue);
 };
 
-const calculateGST = (metalAmount, makingCharges, gstOnMetal = 3, gstOnMaking = 5, isIntraState = true) => {
+const calculateGST = (metalAmount, makingCharges, huidCharges = 0, gstOnMetal = 3, gstOnMaking = 5, isIntraState = true) => {
   const gstOnMetalAmount = (metalAmount * gstOnMetal) / 100;
-  const gstOnMakingAmount = (makingCharges * gstOnMaking) / 100;
+  const gstOnMakingAmount = ((makingCharges + huidCharges) * gstOnMaking) / 100;
   
   if (isIntraState) {
     return {
       metalAmount,
       makingCharges,
+      huidCharges,
       gstOnMetal: gstOnMetalAmount,
       gstOnMaking: gstOnMakingAmount,
       gstOnMetalCGST: gstOnMetalAmount / 2,
       gstOnMetalSGST: gstOnMetalAmount / 2,
       gstOnMakingCGST: gstOnMakingAmount / 2,
       gstOnMakingSGST: gstOnMakingAmount / 2,
-      total: metalAmount + makingCharges + gstOnMetalAmount + gstOnMakingAmount,
+      total: metalAmount + makingCharges + huidCharges + gstOnMetalAmount + gstOnMakingAmount,
       totalGST: gstOnMetalAmount + gstOnMakingAmount
     };
   } else {
     return {
       metalAmount,
       makingCharges,
+      huidCharges,
       gstOnMetal: gstOnMetalAmount,
       gstOnMaking: gstOnMakingAmount,
       gstOnMetalIGST: gstOnMetalAmount,
       gstOnMakingIGST: gstOnMakingAmount,
-      total: metalAmount + makingCharges + gstOnMetalAmount + gstOnMakingAmount,
+      total: metalAmount + makingCharges + huidCharges + gstOnMetalAmount + gstOnMakingAmount,
       totalGST: gstOnMetalAmount + gstOnMakingAmount
     };
   }
