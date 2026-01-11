@@ -15,28 +15,23 @@ const itemSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  // NEW: Unit field
   unit: {
     type: String,
     enum: ['PCS', 'GM'],
     default: 'GM'
   },
-  // NEW: Quantity field
   quantity: {
     type: Number,
     default: 1
   },
-  // NEW: Gross Weight field
   grossWeight: {
     type: Number,
     default: 0
   },
-  // NEW: Less Weight field
   lessWeight: {
     type: Number,
     default: 0
   },
-  // UPDATED: Weight becomes Net Weight
   weight: {
     type: Number,
     required: true
@@ -45,7 +40,6 @@ const itemSchema = new mongoose.Schema({
     type: Number,
     required: true
   },
-  // UPDATED: Making Charge Type
   makingChargesType: {
     type: String,
     enum: ['percentage', 'fixed', 'GRM'],
@@ -55,7 +49,6 @@ const itemSchema = new mongoose.Schema({
     type: Number,
     required: true
   },
-  // NEW: Discount on Making
   makingChargesDiscount: {
     type: Number,
     default: 0
@@ -64,11 +57,6 @@ const itemSchema = new mongoose.Schema({
     type: Number,
     required: true
   },
-  // NEW: Item HUID Charges
-  itemHuidCharges: {
-    type: Number,
-    default: 0
-  },
   amount: {
     type: Number,
     required: true
@@ -76,11 +64,9 @@ const itemSchema = new mongoose.Schema({
   image: {
     type: String
   },
-  // NEW: HUID / Hallmark ID
   huid: {
     type: String
   },
-  // NEW: Tunch (Purity Touch)
   tunch: {
     type: String
   },
@@ -140,7 +126,6 @@ const billSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
-  // NEW: Discount Type
   discountType: {
     type: String,
     enum: ['amount', 'percentage'],
@@ -150,7 +135,6 @@ const billSchema = new mongoose.Schema({
     type: Number,
     required: true
   },
-  // FIXED: Add comprehensive gstDetails schema
   gstDetails: {
     metalAmount: {
       type: Number,
@@ -174,19 +158,20 @@ const billSchema = new mongoose.Schema({
     },
     gstOnMetalRate: Number,
     gstOnMakingRate: Number,
-    // Intra-state specific
     cgstOnMetal: Number,
     sgstOnMetal: Number,
     cgstOnMaking: Number,
     sgstOnMaking: Number,
     totalCGST: Number,
     totalSGST: Number,
-    // Inter-state specific
     igstOnMetal: Number,
     igstOnMaking: Number,
-    totalIGST: Number
+    totalIGST: Number,
+    huidCharges: {
+      type: Number,
+      default: 0
+    }
   },
-  // NEW: HUID Charges (bill level)
   huidCharges: {
     type: Number,
     default: 0
@@ -248,7 +233,6 @@ const billSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
-  // NEW: GST rates from request
   gstOnMetal: {
     type: Number,
     default: 3
