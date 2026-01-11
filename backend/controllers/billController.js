@@ -37,7 +37,7 @@ exports.createBill = async (req, res) => {
       huidCharges = 0
     } = req.body;
 
-    // FIXED: Clean up optional fields - set to empty string if undefined or empty
+    // Clean up optional fields
     if (customer) {
       customer.address = customer.address || '';
       customer.dob = customer.dob || '';
@@ -98,7 +98,6 @@ exports.createBill = async (req, res) => {
     let subTotal = 0;
     let totalMetalAmount = 0;
     let totalMakingCharges = 0;
-    let totalItemHuidCharges = 0;
     const calculatedItems = [];
     const exchangeDetails = {
       hasExchange: exchangeItems.length > 0,
@@ -139,8 +138,7 @@ exports.createBill = async (req, res) => {
           ...item, 
           rate: perGramRate,
           weight: netWeight,
-          makingChargesDiscount: item.makingChargesDiscount || 0,
-          itemHuidCharges: item.itemHuidCharges || 0
+          makingChargesDiscount: item.makingChargesDiscount || 0
         }, 
         perGramRate, 
         itemGstOnMaking,
@@ -150,7 +148,7 @@ exports.createBill = async (req, res) => {
       
       calculatedItems.push({
         ...item,
-        // Include all new fields
+        // Include all fields
         unit: item.unit || 'GM',
         quantity: item.quantity || 1,
         grossWeight: item.grossWeight || 0,
@@ -159,7 +157,6 @@ exports.createBill = async (req, res) => {
         rate: perGramRate,
         makingChargesAmount: itemCalc.makingCharges,
         makingChargesDiscount: item.makingChargesDiscount || 0,
-        itemHuidCharges: item.itemHuidCharges || 0,
         gstOnMaking: itemGstOnMaking,
         gstOnMetal: itemGstOnMetal,
         amount: itemCalc.total,
@@ -182,7 +179,6 @@ exports.createBill = async (req, res) => {
       subTotal += itemCalc.total;
       totalMetalAmount += itemCalc.metalAmount;
       totalMakingCharges += itemCalc.makingCharges;
-      totalItemHuidCharges += item.itemHuidCharges || 0;
     }
 
     // Process exchange items
@@ -230,14 +226,11 @@ exports.createBill = async (req, res) => {
       }
     }
 
-    // Calculate total HUID charges (item level + bill level)
-    const totalHuidCharges = totalItemHuidCharges + (huidCharges || 0);
-
     // Calculate GST on final sale value
     const gstCalculation = calculateGST(
       totalMetalAmount,
       totalMakingCharges,
-      totalHuidCharges,
+      huidCharges,
       gstOnMetal,
       gstOnMaking,
       isIntraState
@@ -246,13 +239,13 @@ exports.createBill = async (req, res) => {
     // Calculate discount amount
     let discountAmount = 0;
     if (discountType === 'percentage') {
-      discountAmount = (totalMetalAmount + totalMakingCharges + totalHuidCharges) * (discount / 100);
+      discountAmount = (totalMetalAmount + totalMakingCharges + huidCharges) * (discount / 100);
     } else {
       discountAmount = discount;
     }
     
     // Calculate total before GST
-    const totalBeforeGST = totalMetalAmount + totalMakingCharges + totalHuidCharges - discountAmount;
+    const totalBeforeGST = totalMetalAmount + totalMakingCharges + huidCharges - discountAmount;
     
     // Calculate grand total including GST
     const grandTotal = totalBeforeGST + gstCalculation.totalGST;
@@ -303,7 +296,7 @@ exports.createBill = async (req, res) => {
       gstDetails: {
         metalAmount: totalMetalAmount,
         makingCharges: totalMakingCharges,
-        huidCharges: totalHuidCharges,
+        huidCharges: huidCharges,
         gstOnMetal: gstCalculation.gstOnMetal,
         gstOnMaking: gstCalculation.gstOnMaking,
         isIntraState: isIntraState,
@@ -322,7 +315,7 @@ exports.createBill = async (req, res) => {
           totalIGST: gstCalculation.gstOnMetalIGST + gstCalculation.gstOnMakingIGST
         })
       },
-      huidCharges: totalHuidCharges,
+      huidCharges: huidCharges,
       grandTotal,
       amountInWords,
       paymentMode,
@@ -701,7 +694,6 @@ exports.calculateBill = async (req, res) => {
     let subTotal = 0;
     let totalMetalAmount = 0;
     let totalMakingCharges = 0;
-    let totalItemHuidCharges = 0;
     let totalGST = 0;
     const calculatedItems = [];
     const exchangeDetails = {
@@ -736,8 +728,7 @@ exports.calculateBill = async (req, res) => {
           ...item, 
           rate: perGramRate,
           weight: netWeight,
-          makingChargesDiscount: item.makingChargesDiscount || 0,
-          itemHuidCharges: item.itemHuidCharges || 0
+          makingChargesDiscount: item.makingChargesDiscount || 0
         }, 
         perGramRate, 
         gstOnMaking,
@@ -755,7 +746,6 @@ exports.calculateBill = async (req, res) => {
         rate: perGramRate,
         makingChargesAmount: itemCalc.makingCharges,
         makingChargesDiscount: item.makingChargesDiscount || 0,
-        itemHuidCharges: item.itemHuidCharges || 0,
         amount: itemCalc.total,
         metalAmount: itemCalc.metalAmount,
         makingCharges: itemCalc.makingCharges,
@@ -769,7 +759,6 @@ exports.calculateBill = async (req, res) => {
       subTotal += itemCalc.total;
       totalMetalAmount += itemCalc.metalAmount;
       totalMakingCharges += itemCalc.makingCharges;
-      totalItemHuidCharges += item.itemHuidCharges || 0;
       totalGST += isIntraState ? 
         (itemCalc.gstOnMetalCGST + itemCalc.gstOnMetalSGST + itemCalc.gstOnMakingCGST + itemCalc.gstOnMakingSGST) :
         (itemCalc.gstOnMetalIGST + itemCalc.gstOnMakingIGST);
@@ -791,13 +780,10 @@ exports.calculateBill = async (req, res) => {
       exchangeDetails.oldItemsTotal += exchangeValue;
     }
 
-    // Calculate total HUID charges
-    const totalHuidCharges = totalItemHuidCharges + (huidCharges || 0);
-
     // Calculate discount
     let discountAmount = 0;
     if (discountType === 'percentage') {
-      discountAmount = (totalMetalAmount + totalMakingCharges + totalHuidCharges) * (discount / 100);
+      discountAmount = (totalMetalAmount + totalMakingCharges + huidCharges) * (discount / 100);
     } else {
       discountAmount = discount;
     }
@@ -806,14 +792,14 @@ exports.calculateBill = async (req, res) => {
     const gstCalculation = calculateGST(
       totalMetalAmount,
       totalMakingCharges,
-      totalHuidCharges,
+      huidCharges,
       gstOnMetal,
       gstOnMaking,
       isIntraState
     );
 
     // Calculate totals
-    const totalBeforeGST = totalMetalAmount + totalMakingCharges + totalHuidCharges - discountAmount;
+    const totalBeforeGST = totalMetalAmount + totalMakingCharges + huidCharges - discountAmount;
     const grandTotal = totalBeforeGST + gstCalculation.totalGST;
 
     // Calculate exchange balances
@@ -834,7 +820,7 @@ exports.calculateBill = async (req, res) => {
         subTotal,
         totalMetalAmount,
         totalMakingCharges,
-        totalHuidCharges,
+        huidCharges,
         discount: discountAmount,
         gst: gstCalculation.totalGST,
         grandTotal,
