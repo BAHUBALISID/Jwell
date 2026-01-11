@@ -64,6 +64,11 @@ const itemSchema = new mongoose.Schema({
     type: Number,
     required: true
   },
+  // NEW: Item HUID Charges
+  itemHuidCharges: {
+    type: Number,
+    default: 0
+  },
   amount: {
     type: Number,
     required: true
@@ -135,6 +140,12 @@ const billSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  // NEW: Discount Type
+  discountType: {
+    type: String,
+    enum: ['amount', 'percentage'],
+    default: 'amount'
+  },
   gst: {
     type: Number,
     required: true
@@ -174,6 +185,11 @@ const billSchema = new mongoose.Schema({
     igstOnMetal: Number,
     igstOnMaking: Number,
     totalIGST: Number
+  },
+  // NEW: HUID Charges (bill level)
+  huidCharges: {
+    type: Number,
+    default: 0
   },
   grandTotal: {
     type: Number,
@@ -231,6 +247,15 @@ const billSchema = new mongoose.Schema({
   isIntraState: {
     type: Boolean,
     default: true
+  },
+  // NEW: GST rates from request
+  gstOnMetal: {
+    type: Number,
+    default: 3
+  },
+  gstOnMaking: {
+    type: Number,
+    default: 5
   }
 }, {
   timestamps: true
