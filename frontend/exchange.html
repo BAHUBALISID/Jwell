@@ -6,6 +6,8 @@
     <title>Exchange - Shri Mahakaleshwar Jewellers</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- QR Code Library -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
     <style>
         .exchange-container {
             display: grid;
@@ -215,6 +217,7 @@
             display: flex;
             gap: 15px;
             justify-content: center;
+            flex-wrap: wrap;
         }
         
         .quick-actions {
@@ -227,6 +230,7 @@
             gap: 10px;
             justify-content: center;
             margin-top: 10px;
+            flex-wrap: wrap;
         }
         
         .help-text {
@@ -277,18 +281,199 @@
             outline: none;
         }
         
-        .form-control {
-            display: block;
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1050;
+            left: 0;
+            top: 0;
             width: 100%;
-            padding: 0.375rem 0.75rem;
-            font-size: 1rem;
-            line-height: 1.5;
-            color: #495057;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+        }
+        
+        .modal.show {
+            display: block;
+        }
+        
+        .modal-dialog {
+            position: relative;
+            width: 90%;
+            max-width: 1200px;
+            margin: 30px auto;
+        }
+        
+        .modal-content {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
             background-color: #fff;
-            background-clip: padding-box;
-            border: 1px solid #ced4da;
-            border-radius: 0.25rem;
-            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+            border: 1px solid rgba(0,0,0,.2);
+            border-radius: 0.3rem;
+            outline: 0;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            padding: 1rem;
+            border-bottom: 1px solid #dee2e6;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .modal-title {
+            margin: 0;
+            line-height: 1.5;
+        }
+        
+        .modal-body {
+            position: relative;
+            flex: 1 1 auto;
+            padding: 1rem;
+        }
+        
+        .modal-footer {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding: 1rem;
+            border-top: 1px solid #dee2e6;
+        }
+        
+        .close {
+            float: right;
+            font-size: 1.5rem;
+            font-weight: 700;
+            line-height: 1;
+            color: white;
+            text-shadow: 0 1px 0 #fff;
+            opacity: .5;
+            background: transparent;
+            border: 0;
+            cursor: pointer;
+        }
+        
+        .close:hover {
+            opacity: 1;
+        }
+        
+        /* Invoice Preview Styles */
+        .invoice-preview {
+            font-family: 'Arial', sans-serif;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        
+        .shop-header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #D4AF37;
+        }
+        
+        .shop-header h2 {
+            color: #D4AF37;
+            margin: 0;
+            font-size: 32px;
+        }
+        
+        .shop-header p {
+            margin: 5px 0;
+            color: #666;
+        }
+        
+        .invoice-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .customer-details, .invoice-meta {
+            padding: 15px;
+            background: white;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        .items-table th {
+            background: #f8f9fa;
+            padding: 12px;
+            text-align: left;
+            border-bottom: 2px solid #dee2e6;
+            color: #333;
+            font-weight: 600;
+        }
+        
+        .items-table td {
+            padding: 10px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .items-table tbody tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .totals-table {
+            width: 50%;
+            margin-left: auto;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .totals-table td {
+            padding: 10px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .totals-table tr:last-child td {
+            font-weight: bold;
+            font-size: 18px;
+            color: #D4AF37;
+            border-top: 2px solid #D4AF37;
+        }
+        
+        .qr-section {
+            text-align: center;
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px dashed #dee2e6;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+        
+        .qr-code {
+            display: inline-block;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .terms-conditions {
+            margin-top: 30px;
+            padding: 20px;
+            background: #fff3cd;
+            border-radius: 8px;
+            font-size: 14px;
         }
         
         .btn {
@@ -313,6 +498,12 @@
             border-color: #007bff;
         }
         
+        .btn-secondary {
+            color: #fff;
+            background-color: #6c757d;
+            border-color: #6c757d;
+        }
+        
         .btn-danger {
             color: #fff;
             background-color: #dc3545;
@@ -329,6 +520,12 @@
             color: #fff;
             background-color: #28a745;
             border-color: #28a745;
+        }
+        
+        .btn-info {
+            color: #fff;
+            background-color: #17a2b8;
+            border-color: #17a2b8;
         }
         
         .btn-outline {
@@ -348,6 +545,257 @@
             padding: 0.5rem 1rem;
             font-size: 1.25rem;
             border-radius: 0.3rem;
+        }
+        
+        .form-control {
+            display: block;
+            width: 100%;
+            padding: 0.375rem 0.75rem;
+            font-size: 1rem;
+            line-height: 1.5;
+            color: #495057;
+            background-color: #fff;
+            background-clip: padding-box;
+            border: 1px solid #ced4da;
+            border-radius: 0.25rem;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+        
+        /* Print Styles */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            .print-container, .print-container * {
+                visibility: visible;
+            }
+            .print-container {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                padding: 0;
+                margin: 0;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .invoice-container {
+                box-shadow: none !important;
+                border: none !important;
+            }
+        }
+        
+        .print-container {
+            display: none;
+            padding: 20px;
+            font-family: 'Arial', sans-serif;
+        }
+        
+        .invoice-container {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 20mm;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            font-family: 'Arial', sans-serif;
+        }
+        
+        .shop-name {
+            text-align: center;
+            font-size: 32px;
+            font-weight: bold;
+            color: #D4AF37;
+            margin-bottom: 5px;
+        }
+        
+        .shop-address {
+            text-align: center;
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .shop-contact {
+            text-align: center;
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #D4AF37;
+        }
+        
+        .bill-info {
+            display: flex;
+            justify-content: space-between;
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .customer-info {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+        
+        .customer-info h3 {
+            color: #D4AF37;
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+        
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        .items-table th {
+            background: #D4AF37;
+            color: white;
+            padding: 10px;
+            text-align: left;
+            font-weight: bold;
+        }
+        
+        .items-table td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .items-table tbody tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+        
+        .calculations {
+            margin: 30px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .calc-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .calc-row.total {
+            font-weight: bold;
+            font-size: 18px;
+            color: #D4AF37;
+            border-bottom: 2px solid #D4AF37;
+        }
+        
+        .amount-words {
+            margin: 20px 0;
+            padding: 15px;
+            background: #fff3cd;
+            border-radius: 8px;
+            border-left: 4px solid #ffc107;
+        }
+        
+        .qr-codes {
+            text-align: center;
+            margin: 30px 0;
+            padding: 20px;
+            border-top: 2px dashed #dee2e6;
+            border-bottom: 2px dashed #dee2e6;
+        }
+        
+        .qr-box {
+            display: inline-block;
+            margin: 0 20px;
+            text-align: center;
+        }
+        
+        .qr-box img {
+            width: 150px;
+            height: 150px;
+            display: block;
+            margin: 0 auto 10px;
+        }
+        
+        .qr-box h4 {
+            margin: 0 0 10px 0;
+            color: #D4AF37;
+        }
+        
+        .invoice-footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #D4AF37;
+        }
+        
+        .signature {
+            display: flex;
+            justify-content: space-between;
+            margin: 40px 0 20px 0;
+        }
+        
+        .signature-box {
+            text-align: center;
+            width: 45%;
+        }
+        
+        .signature-line {
+            border-bottom: 1px solid #000;
+            width: 80%;
+            margin: 0 auto 10px;
+            padding-top: 40px;
+        }
+        
+        .terms {
+            margin-top: 30px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-size: 12px;
+        }
+        
+        .terms p {
+            margin: 5px 0;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .invoice-container {
+                width: 100%;
+                padding: 10px;
+            }
+            
+            .shop-name {
+                font-size: 24px;
+            }
+            
+            .bill-info {
+                flex-direction: column;
+            }
+            
+            .signature {
+                flex-direction: column;
+            }
+            
+            .signature-box {
+                width: 100%;
+                margin-bottom: 20px;
+            }
+            
+            .qr-codes {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .qr-box {
+                margin: 10px 0;
+            }
         }
     </style>
 </head>
@@ -383,7 +831,7 @@
     <div class="main-container">
         <div class="page-header">
             <h2><i class="fas fa-exchange-alt"></i> Jewellery Exchange System</h2>
-            <p>Calculate exchange value and proceed to billing</p>
+            <p>Calculate exchange value, print exchange bill, or proceed to billing</p>
         </div>
 
         <!-- Alert Container -->
@@ -526,6 +974,9 @@
                 <button class="btn btn-warning btn-lg" id="calculateExchangeBtn">
                     <i class="fas fa-calculator"></i> Calculate Exchange
                 </button>
+                <button class="btn btn-info btn-lg" id="printExchangeBtn">
+                    <i class="fas fa-print"></i> Print Exchange Bill
+                </button>
                 <button class="btn btn-success btn-lg" id="proceedToBillingBtn" disabled>
                     <i class="fas fa-file-invoice-dollar"></i> Proceed to Billing
                 </button>
@@ -550,6 +1001,38 @@
             </div>
         </div>
     </div>
+
+    <!-- Exchange Preview Modal -->
+    <div class="modal" id="exchangePreviewModal">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-file-invoice"></i> Exchange Bill Preview
+                    </h5>
+                    <button type="button" class="close" onclick="closeExchangePreview()">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="invoice-preview" id="exchangePreviewContent">
+                        <!-- Preview content will be loaded here -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeExchangePreview()">
+                        <i class="fas fa-times"></i> Close
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="exchangeSystem.printExchangeBill()">
+                        <i class="fas fa-print"></i> Print Bill
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Print Container (Hidden) -->
+    <div id="printContainer" class="print-container"></div>
 
     <!-- Scripts -->
     <script src="js/auth.js"></script>
@@ -676,6 +1159,16 @@
                     alertDiv.remove();
                 }
             }, 5000);
+        }
+        
+        // Close exchange preview
+        function closeExchangePreview() {
+            document.getElementById('exchangePreviewModal').classList.remove('show');
+        }
+        
+        // Show exchange preview
+        function showExchangePreview() {
+            document.getElementById('exchangePreviewModal').classList.add('show');
         }
     </script>
 </body>
