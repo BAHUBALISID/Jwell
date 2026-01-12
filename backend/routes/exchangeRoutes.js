@@ -12,16 +12,7 @@ router.post('/', exchangeController.createExchange);
 // Get all exchanges
 router.get('/', exchangeController.getAllExchanges);
 
-// Get exchange by number
-router.get('/:exchangeNumber', exchangeController.getExchangeByNumber);
-
 // Convert exchange to bill
 router.put('/:id/convert-to-bill', exchangeController.convertToBill);
-
-// Delete exchange
-router.delete('/:id', exchangeController.deleteExchange);
-
-// Get exchange statistics
-router.get('/stats/summary', exchangeController.getExchangeStats);
 
 module.exports = router;
