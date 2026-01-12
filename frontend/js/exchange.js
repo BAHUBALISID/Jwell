@@ -4,8 +4,9 @@ class ExchangeSystem {
         this.apiBase = 'http://localhost:5000/api';
         this.token = window.auth.getToken();
         this.rates = {};
-        this.oldItems = {}; // Track old items by ID
-        this.newItems = {}; // Track new items by ID
+        this.oldItems = {};
+        this.newItems = {};
+        this.exchangeData = null;
         this.metalPurities = {
             'Gold': ['22K', '18K', '14K', '24K', '916', '750', '585'],
             'Silver': ['925', '999', '830', '900'],
@@ -36,41 +37,15 @@ class ExchangeSystem {
                     };
                     return acc;
                 }, {});
-                
-                console.log('Rates loaded with purity levels:', this.rates);
             } else {
-                // Use default rates with purity levels
+                // Use default rates
                 this.rates = {
-                    'Gold': { 
-                        rate: 600000, 
-                        unit: 'kg', 
-                        purityLevels: this.metalPurities['Gold'] 
-                    },
-                    'Silver': { 
-                        rate: 80000, 
-                        unit: 'kg', 
-                        purityLevels: this.metalPurities['Silver'] 
-                    },
-                    'Diamond': { 
-                        rate: 50000, 
-                        unit: 'carat', 
-                        purityLevels: this.metalPurities['Diamond'] 
-                    },
-                    'Platinum': { 
-                        rate: 400000, 
-                        unit: 'kg', 
-                        purityLevels: this.metalPurities['Platinum'] 
-                    },
-                    'Antique / Polki': { 
-                        rate: 300000, 
-                        unit: 'kg', 
-                        purityLevels: this.metalPurities['Antique / Polki'] 
-                    },
-                    'Others': { 
-                        rate: 100000, 
-                        unit: 'kg', 
-                        purityLevels: this.metalPurities['Others'] 
-                    }
+                    'Gold': { rate: 600000, unit: 'kg', purityLevels: this.metalPurities['Gold'] },
+                    'Silver': { rate: 80000, unit: 'kg', purityLevels: this.metalPurities['Silver'] },
+                    'Diamond': { rate: 50000, unit: 'carat', purityLevels: this.metalPurities['Diamond'] },
+                    'Platinum': { rate: 400000, unit: 'kg', purityLevels: this.metalPurities['Platinum'] },
+                    'Antique / Polki': { rate: 300000, unit: 'kg', purityLevels: this.metalPurities['Antique / Polki'] },
+                    'Others': { rate: 100000, unit: 'kg', purityLevels: this.metalPurities['Others'] }
                 };
             }
         } catch (error) {
@@ -95,6 +70,11 @@ class ExchangeSystem {
             this.calculateExchange();
         });
 
+        // Print exchange bill button
+        document.getElementById('printExchangeBtn').addEventListener('click', () => {
+            this.previewExchangeBill();
+        });
+
         // Proceed to billing button
         document.getElementById('proceedToBillingBtn').addEventListener('click', () => {
             this.proceedToBilling();
@@ -107,7 +87,6 @@ class ExchangeSystem {
     }
 
     setupExchangeCalculator() {
-        // Initialize exchange calculator UI
         const calculator = document.getElementById('exchangeCalculator');
         if (calculator) {
             const metalOptions = Object.keys(this.rates).map(metal => 
@@ -179,7 +158,6 @@ class ExchangeSystem {
             const metalSelect = document.getElementById('calcOldMetal');
             this.updateCalculatorPurities(metalSelect.value);
             
-            // Add change listener for metal type
             metalSelect.addEventListener('change', (e) => {
                 this.updateCalculatorPurities(e.target.value);
             });
@@ -265,7 +243,6 @@ class ExchangeSystem {
             </div>
         `;
         
-        // Initialize item object
         this.oldItems[itemId] = {
             id: itemId,
             description: '',
@@ -382,7 +359,6 @@ class ExchangeSystem {
             </div>
         `;
         
-        // Initialize item object
         this.newItems[itemId] = {
             id: itemId,
             description: '',
@@ -406,8 +382,6 @@ class ExchangeSystem {
     }
 
     handleMetalChange(itemId, metalType, isOldItem) {
-        console.log('Metal changed:', metalType, 'for item:', itemId);
-        
         if (isOldItem) {
             const item = this.oldItems[itemId];
             if (item) {
@@ -434,18 +408,16 @@ class ExchangeSystem {
                 } else {
                     item[field] = value;
                 }
-                
                 this.updateExchangeSummary();
             }
         } else {
             const item = this.newItems[itemId];
             if (item) {
-                if (['weight', 'makingCharges', 'wastageDeduction', 'meltingCharges', 'makingChargesDiscount', 'quantity', 'grossWeight', 'lessWeight', 'rate'].includes(field)) {
+                if (['weight', 'makingCharges', 'makingChargesDiscount', 'quantity', 'grossWeight', 'lessWeight', 'rate'].includes(field)) {
                     item[field] = parseFloat(value) || 0;
                 } else {
                     item[field] = value;
                 }
-                
                 this.updateExchangeSummary();
             }
         }
@@ -458,14 +430,12 @@ class ExchangeSystem {
         const value = parseFloat(element.value) || 0;
         item[field] = value;
         
-        // Calculate net weight
         const grossWeight = item.grossWeight || 0;
         const lessWeight = item.lessWeight || 0;
         const netWeight = grossWeight - lessWeight;
         
         item.weight = Math.max(0, netWeight);
         
-        // Update the net weight field in UI
         const netWeightInput = document.querySelector(`#${itemId} .net-weight`);
         if (netWeightInput) {
             netWeightInput.value = netWeight.toFixed(3);
@@ -505,7 +475,6 @@ class ExchangeSystem {
             return;
         }
 
-        // Calculate metal value
         let metalValue = 0;
         if (rate.unit === 'kg') {
             metalValue = (rate.rate / 1000) * weight;
@@ -515,30 +484,22 @@ class ExchangeSystem {
             metalValue = rate.rate * weight;
         }
 
-        // Apply purity adjustment for gold
         if (metalType === 'Gold') {
             if (purity === '22K') metalValue = metalValue * 0.9167;
             else if (purity === '18K') metalValue = metalValue * 0.75;
             else if (purity === '14K') metalValue = metalValue * 0.5833;
         }
 
-        // Apply shop policy: 3% deduction on old items
-        const afterShopDeduction = metalValue * 0.97; // 3% deduction
-        
-        // Apply wastage deduction
+        const afterShopDeduction = metalValue * 0.97;
         const afterWastage = afterShopDeduction * ((100 - wastage) / 100);
-        
-        // Apply melting charges
         const netValue = Math.max(0, afterWastage - melting);
 
-        // Update display
         document.getElementById('calcMetalValue').textContent = `₹${metalValue.toFixed(2)}`;
         document.getElementById('calcAfterShopDeduction').textContent = `₹${afterShopDeduction.toFixed(2)}`;
         document.getElementById('calcAfterWastage').textContent = `₹${afterWastage.toFixed(2)}`;
         document.getElementById('calcAfterMelting').textContent = `₹${netValue.toFixed(2)}`;
         document.getElementById('calcNetValue').textContent = `₹${netValue.toFixed(2)}`;
 
-        // Add to old items
         this.addToOldItems(metalType, purity, weight, wastage, melting, netValue);
     }
 
@@ -588,7 +549,6 @@ class ExchangeSystem {
             </div>
         `;
         
-        // Initialize item object
         this.oldItems[itemId] = {
             id: itemId,
             description: `Calculated ${metalType} Item`,
@@ -604,8 +564,8 @@ class ExchangeSystem {
     }
 
     updateExchangeSummary() {
-        // Calculate old items total
         let oldItemsTotal = 0;
+        const oldItemsArray = [];
         
         Object.values(this.oldItems).forEach(item => {
             if (item.metalType && item.weight > 0) {
@@ -620,27 +580,27 @@ class ExchangeSystem {
                         value = rate.rate * item.weight;
                     }
                     
-                    // Apply purity adjustment
                     if (item.metalType === 'Gold') {
                         if (item.purity === '22K') value = value * 0.9167;
                         else if (item.purity === '18K') value = value * 0.75;
                         else if (item.purity === '14K') value = value * 0.5833;
                     }
                     
-                    // Apply shop policy: 3% deduction on old items
-                    value = value * 0.97; // 3% deduction
-                    
-                    // Apply wastage and melting
+                    value = value * 0.97;
                     value = value * ((100 - (item.wastageDeduction || 0)) / 100);
                     value = Math.max(0, value - (item.meltingCharges || 0));
                     
                     oldItemsTotal += value;
+                    oldItemsArray.push({
+                        ...item,
+                        calculatedValue: value
+                    });
                 }
             }
         });
         
-        // Calculate new items total (without GST for now)
         let newItemsTotal = 0;
+        const newItemsArray = [];
         
         Object.values(this.newItems).forEach(item => {
             if (item.metalType && item.weight > 0) {
@@ -655,14 +615,12 @@ class ExchangeSystem {
                         itemValue = (rate.rate || 0) * item.weight;
                     }
                     
-                    // Apply purity adjustment
                     if (item.metalType === 'Gold') {
                         if (item.purity === '22K') itemValue = itemValue * 0.9167;
                         else if (item.purity === '18K') itemValue = itemValue * 0.75;
                         else if (item.purity === '14K') itemValue = itemValue * 0.5833;
                     }
                     
-                    // Apply making charges
                     let makingAmount = 0;
                     if (item.makingChargesType === 'percentage') {
                         makingAmount = (itemValue * (item.makingCharges || 0)) / 100;
@@ -672,20 +630,21 @@ class ExchangeSystem {
                         makingAmount = item.makingCharges || 0;
                     }
                     
-                    // Apply discount on making charges
                     if (item.makingChargesDiscount && item.makingChargesDiscount > 0) {
                         makingAmount = makingAmount - (makingAmount * item.makingChargesDiscount / 100);
                     }
                     
                     newItemsTotal += itemValue + makingAmount;
+                    newItemsArray.push({
+                        ...item,
+                        calculatedValue: itemValue + makingAmount
+                    });
                 }
             }
         });
         
-        // Calculate balance
         const balance = oldItemsTotal - newItemsTotal;
         
-        // Update summary display
         document.getElementById('oldItemsTotal').textContent = `₹${oldItemsTotal.toFixed(2)}`;
         document.getElementById('newItemsTotal').textContent = `₹${newItemsTotal.toFixed(2)}`;
         
@@ -697,11 +656,24 @@ class ExchangeSystem {
             document.getElementById('balanceRefundable').textContent = '₹0.00';
         }
         
-        // Enable/disable proceed button
         const proceedBtn = document.getElementById('proceedToBillingBtn');
+        const printBtn = document.getElementById('printExchangeBtn');
         const hasOldItems = Object.keys(this.oldItems).length > 0;
         const hasNewItems = Object.keys(this.newItems).length > 0;
         proceedBtn.disabled = !(hasOldItems && hasNewItems);
+        printBtn.disabled = !(hasOldItems && hasNewItems);
+        
+        this.exchangeData = {
+            oldItems: oldItemsArray,
+            newItems: newItemsArray,
+            oldItemsTotal,
+            newItemsTotal,
+            balance,
+            balancePayable: balance < 0 ? Math.abs(balance) : 0,
+            balanceRefundable: balance >= 0 ? balance : 0,
+            timestamp: Date.now(),
+            exchangeNumber: 'EXC-' + Date.now().toString().slice(-8)
+        };
     }
 
     calculateExchange() {
@@ -709,8 +681,417 @@ class ExchangeSystem {
         showAlert('success', 'Exchange calculated successfully');
     }
 
+    previewExchangeBill() {
+        if (!this.exchangeData || !this.exchangeData.oldItems || this.exchangeData.oldItems.length === 0) {
+            showAlert('warning', 'Please add at least one old item and one new item before printing');
+            return;
+        }
+
+        const previewContent = document.getElementById('exchangePreviewContent');
+        if (!previewContent) return;
+
+        const exchangeNumber = this.exchangeData.exchangeNumber;
+        const date = new Date().toLocaleDateString('en-IN');
+        const time = new Date().toLocaleTimeString('en-IN');
+        
+        let oldItemsHtml = '';
+        this.exchangeData.oldItems.forEach((item, index) => {
+            oldItemsHtml += `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${item.description || item.metalType + ' Item'}</td>
+                    <td>${item.metalType}</td>
+                    <td>${item.purity || 'N/A'}</td>
+                    <td>${item.weight.toFixed(3)} ${this.rates[item.metalType]?.unit === 'carat' ? 'ct' : 'g'}</td>
+                    <td>${item.wastageDeduction || 0}%</td>
+                    <td>₹${item.meltingCharges || 0}</td>
+                    <td>₹${item.calculatedValue?.toFixed(2) || '0.00'}</td>
+                </tr>
+            `;
+        });
+
+        let newItemsHtml = '';
+        this.exchangeData.newItems.forEach((item, index) => {
+            newItemsHtml += `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${item.description || 'New Item'}</td>
+                    <td>${item.metalType}</td>
+                    <td>${item.purity || 'N/A'}</td>
+                    <td>${item.weight.toFixed(3)} ${this.rates[item.metalType]?.unit === 'carat' ? 'ct' : 'g'}</td>
+                    <td>₹${(item.rate || 0).toFixed(2)}</td>
+                    <td>${item.makingChargesType === 'percentage' ? item.makingCharges + '%' : '₹' + item.makingCharges}</td>
+                    <td>₹${item.calculatedValue?.toFixed(2) || '0.00'}</td>
+                </tr>
+            `;
+        });
+
+        previewContent.innerHTML = `
+            <div class="invoice-preview">
+                <div class="shop-header">
+                    <h2>Shri Mahakaleshwar Jewellers</h2>
+                    <p>Anisabad, Patna, Bihar - 800002</p>
+                    <p>Mobile: +91 9876543210 | GSTIN: 10ABCDE1234F1Z5</p>
+                </div>
+                
+                <div class="invoice-info">
+                    <div class="customer-details">
+                        <h4><i class="fas fa-exchange-alt"></i> Exchange Summary</h4>
+                        <p><strong>Exchange No:</strong> ${exchangeNumber}</p>
+                        <p><strong>Date:</strong> ${date}</p>
+                        <p><strong>Time:</strong> ${time}</p>
+                    </div>
+                    
+                    <div class="invoice-meta">
+                        <h4><i class="fas fa-info-circle"></i> Exchange Details</h4>
+                        <p><strong>Old Items:</strong> ${this.exchangeData.oldItems.length}</p>
+                        <p><strong>New Items:</strong> ${this.exchangeData.newItems.length}</p>
+                        <p><strong>Status:</strong> Calculated</p>
+                    </div>
+                </div>
+                
+                <h4><i class="fas fa-box-open"></i> Old Items for Exchange (3% deduction applied)</h4>
+                <table class="items-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Description</th>
+                            <th>Metal</th>
+                            <th>Purity</th>
+                            <th>Weight</th>
+                            <th>Wastage</th>
+                            <th>Melting Charges</th>
+                            <th>Value (₹)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${oldItemsHtml}
+                    </tbody>
+                </table>
+                
+                <h4><i class="fas fa-gem"></i> New Items for Purchase</h4>
+                <table class="items-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Description</th>
+                            <th>Metal</th>
+                            <th>Purity</th>
+                            <th>Net Weight</th>
+                            <th>Rate</th>
+                            <th>Making Charges</th>
+                            <th>Value (₹)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${newItemsHtml}
+                    </tbody>
+                </table>
+                
+                <div class="qr-section">
+                    <h4><i class="fas fa-qrcode"></i> Exchange Summary QR Code</h4>
+                    <div class="qr-code" id="exchangeQRCode"></div>
+                    <p>Scan QR code for exchange details</p>
+                </div>
+                
+                <table class="totals-table">
+                    <tr>
+                        <td><strong>Old Items Total:</strong></td>
+                        <td><strong>₹${this.exchangeData.oldItemsTotal.toFixed(2)}</strong></td>
+                    </tr>
+                    <tr>
+                        <td><strong>New Items Total:</strong></td>
+                        <td><strong>₹${this.exchangeData.newItemsTotal.toFixed(2)}</strong></td>
+                    </tr>
+                    <tr>
+                        <td><strong>${this.exchangeData.balance >= 0 ? 'Balance Refundable:' : 'Balance Payable:'}</strong></td>
+                        <td><strong>₹${Math.abs(this.exchangeData.balance).toFixed(2)}</strong></td>
+                    </tr>
+                </table>
+                
+                <div class="terms-conditions">
+                    <h5><i class="fas fa-file-contract"></i> Exchange Terms & Conditions</h5>
+                    <ol>
+                        <li>This is an exchange calculation summary only, not a final bill.</li>
+                        <li>3% shop policy deduction has been applied on all old items.</li>
+                        <li>Final bill will include GST and other applicable charges.</li>
+                        <li>Exchange value is based on current metal rates at time of calculation.</li>
+                        <li>Making charges are non-refundable on new items.</li>
+                        <li>All disputes subject to Patna jurisdiction only.</li>
+                    </ol>
+                </div>
+            </div>
+        `;
+
+        // Generate QR code
+        const qrData = {
+            shop: 'Shri Mahakaleshwar Jewellers',
+            exchangeNumber: exchangeNumber,
+            date: date,
+            time: time,
+            oldItemsTotal: this.exchangeData.oldItemsTotal,
+            newItemsTotal: this.exchangeData.newItemsTotal,
+            balance: this.exchangeData.balance,
+            status: 'Exchange Calculation',
+            address: 'Anisabad, Patna, Bihar'
+        };
+
+        try {
+            // Clear previous QR code
+            const qrContainer = document.getElementById('exchangeQRCode');
+            qrContainer.innerHTML = '';
+            
+            // Generate new QR code
+            QRCode.toCanvas(qrContainer, JSON.stringify(qrData), {
+                width: 150,
+                height: 150,
+                margin: 1,
+                color: {
+                    dark: '#000000',
+                    light: '#FFFFFF'
+                }
+            }, function (error) {
+                if (error) {
+                    console.error('QR Code generation error:', error);
+                    qrContainer.innerHTML = '<p>QR Code generation failed</p>';
+                }
+            });
+        } catch (error) {
+            console.error('QR Code error:', error);
+        }
+
+        showExchangePreview();
+    }
+
+    printExchangeBill() {
+        if (!this.exchangeData) {
+            showAlert('warning', 'No exchange data to print');
+            return;
+        }
+
+        const exchangeNumber = this.exchangeData.exchangeNumber;
+        const date = new Date().toLocaleDateString('en-IN');
+        const time = new Date().toLocaleTimeString('en-IN');
+        
+        // Create print container
+        let printContainer = document.getElementById('printContainer');
+        if (!printContainer) {
+            printContainer = document.createElement('div');
+            printContainer.id = 'printContainer';
+            printContainer.className = 'print-container';
+            document.body.appendChild(printContainer);
+        }
+
+        let oldItemsHtml = '';
+        this.exchangeData.oldItems.forEach((item, index) => {
+            oldItemsHtml += `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${item.description || item.metalType + ' Item'}</td>
+                    <td>${item.metalType}</td>
+                    <td>${item.purity || 'N/A'}</td>
+                    <td>${item.weight.toFixed(3)} ${this.rates[item.metalType]?.unit === 'carat' ? 'ct' : 'g'}</td>
+                    <td>${item.wastageDeduction || 0}%</td>
+                    <td>₹${item.meltingCharges || 0}</td>
+                    <td>₹${item.calculatedValue?.toFixed(2) || '0.00'}</td>
+                </tr>
+            `;
+        });
+
+        let newItemsHtml = '';
+        this.exchangeData.newItems.forEach((item, index) => {
+            newItemsHtml += `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${item.description || 'New Item'}</td>
+                    <td>${item.metalType}</td>
+                    <td>${item.purity || 'N/A'}</td>
+                    <td>${item.weight.toFixed(3)} ${this.rates[item.metalType]?.unit === 'carat' ? 'ct' : 'g'}</td>
+                    <td>₹${(item.rate || 0).toFixed(2)}</td>
+                    <td>${item.makingChargesType === 'percentage' ? item.makingCharges + '%' : '₹' + item.makingCharges}</td>
+                    <td>₹${item.calculatedValue?.toFixed(2) || '0.00'}</td>
+                </tr>
+            `;
+        });
+
+        const printHTML = `
+            <div class="invoice-container">
+                <div class="shop-name">Shri Mahakaleshwar Jewellers</div>
+                <div class="shop-address">Anisabad, Patna, Bihar - 800002</div>
+                <div class="shop-contact">Mobile: +91 9876543210 | GSTIN: 10ABCDE1234F1Z5</div>
+                
+                <div class="bill-info">
+                    <div>
+                        <div class="bill-number"><strong>Exchange No:</strong> ${exchangeNumber}</div>
+                        <div class="bill-date"><strong>Date:</strong> ${date}</div>
+                        <div class="bill-time"><strong>Time:</strong> ${time}</div>
+                    </div>
+                    <div>
+                        <div><strong>Type:</strong> Jewellery Exchange Calculation</div>
+                        <div><strong>Status:</strong> Calculated (Not Final)</div>
+                        <div><strong>Shop Policy:</strong> 3% deduction on old items</div>
+                    </div>
+                </div>
+                
+                <h3 style="color: #D4AF37; border-bottom: 2px solid #D4AF37; padding-bottom: 5px;">
+                    <i class="fas fa-exchange-alt"></i> EXCHANGE CALCULATION SUMMARY
+                </h3>
+                
+                <h4 style="margin: 15mm 0 5mm 0; color: #ff9900;">Old Items for Exchange (3% deduction applied)</h4>
+                <table class="items-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Description</th>
+                            <th>Metal</th>
+                            <th>Purity</th>
+                            <th>Weight</th>
+                            <th>Wastage</th>
+                            <th>Melting</th>
+                            <th>Value (₹)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${oldItemsHtml}
+                    </tbody>
+                </table>
+                
+                <h4 style="margin: 15mm 0 5mm 0; color: #28a745;">New Items for Purchase</h4>
+                <table class="items-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Description</th>
+                            <th>Metal</th>
+                            <th>Purity</th>
+                            <th>Net Weight</th>
+                            <th>Rate</th>
+                            <th>Making</th>
+                            <th>Value (₹)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${newItemsHtml}
+                    </tbody>
+                </table>
+                
+                <div class="calculations">
+                    <div class="calc-row">
+                        <span>Total Old Items Value (After 3% deduction):</span>
+                        <span>₹${this.exchangeData.oldItemsTotal.toFixed(2)}</span>
+                    </div>
+                    <div class="calc-row">
+                        <span>Total New Items Value:</span>
+                        <span>₹${this.exchangeData.newItemsTotal.toFixed(2)}</span>
+                    </div>
+                    <div class="calc-row total">
+                        <span>${this.exchangeData.balance >= 0 ? 'Balance Refundable:' : 'Balance Payable:'}</span>
+                        <span>₹${Math.abs(this.exchangeData.balance).toFixed(2)}</span>
+                    </div>
+                </div>
+                
+                <div class="qr-codes">
+                    <div class="qr-box">
+                        <h4>Exchange QR Code</h4>
+                        <div id="printQRCode" style="width: 150px; height: 150px; margin: 0 auto;"></div>
+                        <p>Scan for exchange details</p>
+                    </div>
+                </div>
+                
+                <div class="amount-words">
+                    <p><strong>Note:</strong> This is an exchange calculation summary. Final bill will be generated in billing section with GST and all applicable charges.</p>
+                </div>
+                
+                <div class="invoice-footer">
+                    <div class="signature">
+                        <div class="signature-box">
+                            <div class="signature-line"></div>
+                            <p>Customer Signature</p>
+                        </div>
+                        <div class="signature-box">
+                            <div class="signature-line"></div>
+                            <p>Authorized Signature</p>
+                            <p>For Shri Mahakaleshwar Jewellers</p>
+                        </div>
+                    </div>
+                    
+                    <div class="terms">
+                        <p><strong>Exchange Terms & Conditions:</strong></p>
+                        <p>1. This is an exchange calculation summary only, not a final bill.</p>
+                        <p>2. 3% shop policy deduction applied on all old items.</p>
+                        <p>3. Final bill will include GST and other applicable charges.</p>
+                        <p>4. Exchange value based on current metal rates at time of calculation.</p>
+                        <p>5. Making charges are non-refundable on new items.</p>
+                        <p>6. Goods once exchanged will not be taken back.</p>
+                        <p>7. All disputes subject to Patna jurisdiction only.</p>
+                        <p style="text-align: center; margin-top: 10mm; font-weight: bold;">
+                            Thank you for visiting Shri Mahakaleshwar Jewellers
+                        </p>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        printContainer.innerHTML = printHTML;
+        
+        // Generate QR code for print
+        const qrData = {
+            shop: 'Shri Mahakaleshwar Jewellers',
+            exchangeNumber: exchangeNumber,
+            date: date,
+            oldItemsTotal: this.exchangeData.oldItemsTotal,
+            newItemsTotal: this.exchangeData.newItemsTotal,
+            balance: this.exchangeData.balance,
+            type: 'Exchange Calculation',
+            address: 'Anisabad, Patna, Bihar'
+        };
+
+        // Show print container
+        printContainer.style.display = 'block';
+        
+        // Generate QR code after DOM is ready
+        setTimeout(() => {
+            const qrContainer = document.getElementById('printQRCode');
+            if (qrContainer) {
+                qrContainer.innerHTML = '';
+                
+                QRCode.toCanvas(qrContainer, JSON.stringify(qrData), {
+                    width: 150,
+                    height: 150,
+                    margin: 1,
+                    color: {
+                        dark: '#000000',
+                        light: '#FFFFFF'
+                    }
+                }, function (error) {
+                    if (error) {
+                        console.error('Print QR Code error:', error);
+                        qrContainer.innerHTML = '<p>QR Code</p>';
+                    } else {
+                        // Print after QR code is generated
+                        setTimeout(() => {
+                            window.print();
+                            setTimeout(() => {
+                                printContainer.style.display = 'none';
+                                printContainer.innerHTML = '';
+                            }, 1000);
+                        }, 500);
+                    }
+                });
+            } else {
+                // If QR fails, still print
+                setTimeout(() => {
+                    window.print();
+                    setTimeout(() => {
+                        printContainer.style.display = 'none';
+                        printContainer.innerHTML = '';
+                    }, 1000);
+                }, 500);
+            }
+        }, 100);
+    }
+
     proceedToBilling() {
-        // Collect old items data
         const oldItems = Object.values(this.oldItems).map(item => ({
             description: item.description || 'Old Item Exchange',
             metalType: item.metalType,
@@ -720,7 +1101,6 @@ class ExchangeSystem {
             meltingCharges: item.meltingCharges || 0
         }));
         
-        // Collect new items data
         const newItems = Object.values(this.newItems).map(item => ({
             description: item.description || '',
             metalType: item.metalType,
@@ -743,14 +1123,12 @@ class ExchangeSystem {
             return;
         }
         
-        // Validate new items
         const invalidItems = newItems.filter(item => !item.metalType || !item.weight || item.weight <= 0);
         if (invalidItems.length > 0) {
             showAlert('warning', 'Please complete all required fields for new items (Metal, Weight)');
             return;
         }
         
-        // Store data for billing page
         localStorage.setItem('exchangeData', JSON.stringify({
             oldItems,
             newItems,
@@ -759,21 +1137,18 @@ class ExchangeSystem {
             newItemsTotal: parseFloat(document.getElementById('newItemsTotal').textContent.replace('₹', ''))
         }));
         
-        // Redirect to billing page
         window.location.href = 'billing.html?exchange=true';
     }
 
     resetExchange() {
         if (confirm('Are you sure you want to reset the exchange form? All data will be lost.')) {
-            // Clear items
             this.oldItems = {};
             this.newItems = {};
+            this.exchangeData = null;
             
-            // Clear containers
             document.getElementById('oldItemsContainer').innerHTML = '';
             document.getElementById('newItemsContainer').innerHTML = '';
             
-            // Reset calculator
             document.getElementById('calcOldWeight').value = '';
             document.getElementById('calcMetalValue').textContent = '₹0.00';
             document.getElementById('calcAfterShopDeduction').textContent = '₹0.00';
@@ -781,14 +1156,13 @@ class ExchangeSystem {
             document.getElementById('calcAfterMelting').textContent = '₹0.00';
             document.getElementById('calcNetValue').textContent = '₹0.00';
             
-            // Reset summary
             document.getElementById('oldItemsTotal').textContent = '₹0.00';
             document.getElementById('newItemsTotal').textContent = '₹0.00';
             document.getElementById('balanceRefundable').textContent = '₹0.00';
             document.getElementById('balancePayable').textContent = '₹0.00';
             
-            // Disable proceed button
             document.getElementById('proceedToBillingBtn').disabled = true;
+            document.getElementById('printExchangeBtn').disabled = true;
             
             showAlert('info', 'Exchange form reset successfully');
         }
