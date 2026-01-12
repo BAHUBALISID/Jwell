@@ -91,7 +91,7 @@ exports.getAllExchanges = async (req, res) => {
     try {
         const { 
             page = 1, 
-            limit = 10,
+            limit = 50,
             startDate,
             endDate,
             search,
@@ -150,35 +150,6 @@ exports.getAllExchanges = async (req, res) => {
     }
 };
 
-exports.getExchangeByNumber = async (req, res) => {
-    try {
-        const { exchangeNumber } = req.params;
-        
-        const exchange = await Exchange.findOne({ exchangeNumber })
-            .populate('createdBy', 'name')
-            .lean();
-
-        if (!exchange) {
-            return res.status(404).json({
-                success: false,
-                message: 'Exchange not found'
-            });
-        }
-
-        res.json({
-            success: true,
-            exchange
-        });
-
-    } catch (error) {
-        console.error('Get exchange by number error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Server error'
-        });
-    }
-};
-
 exports.convertToBill = async (req, res) => {
     try {
         const { id } = req.params;
@@ -205,81 +176,6 @@ exports.convertToBill = async (req, res) => {
 
     } catch (error) {
         console.error('Convert to bill error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Server error'
-        });
-    }
-};
-
-exports.deleteExchange = async (req, res) => {
-    try {
-        const { id } = req.params;
-
-        const exchange = await Exchange.findById(id);
-        if (!exchange) {
-            return res.status(404).json({
-                success: false,
-                message: 'Exchange not found'
-            });
-        }
-
-        exchange.isActive = false;
-        await exchange.save();
-
-        res.json({
-            success: true,
-            message: 'Exchange deleted successfully'
-        });
-
-    } catch (error) {
-        console.error('Delete exchange error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Server error'
-        });
-    }
-};
-
-exports.getExchangeStats = async (req, res) => {
-    try {
-        const today = new Date();
-        const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-        const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999);
-
-        const totalExchanges = await Exchange.countDocuments({ isActive: true });
-        const monthExchanges = await Exchange.countDocuments({
-            createdAt: { $gte: startOfMonth, $lte: endOfMonth },
-            isActive: true
-        });
-
-        const totalValue = await Exchange.aggregate([
-            { $match: { isActive: true } },
-            { $group: { _id: null, total: { $sum: "$totals.newItemsTotal" } } }
-        ]);
-
-        const monthlyValue = await Exchange.aggregate([
-            { 
-                $match: { 
-                    createdAt: { $gte: startOfMonth, $lte: endOfMonth },
-                    isActive: true 
-                } 
-            },
-            { $group: { _id: null, total: { $sum: "$totals.newItemsTotal" } } }
-        ]);
-
-        res.json({
-            success: true,
-            stats: {
-                totalExchanges,
-                monthExchanges,
-                totalValue: totalValue.length > 0 ? totalValue[0].total : 0,
-                monthlyValue: monthlyValue.length > 0 ? monthlyValue[0].total : 0
-            }
-        });
-
-    } catch (error) {
-        console.error('Get exchange stats error:', error);
         res.status(500).json({
             success: false,
             message: 'Server error'
