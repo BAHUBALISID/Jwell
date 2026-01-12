@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const exchangeController = require('../controllers/exchangeController');
-const auth = require('../middleware/auth');
+const { auth } = require('../middleware/auth'); // Fixed: destructure auth
 
 // Apply auth middleware to all routes
 router.use(auth);
