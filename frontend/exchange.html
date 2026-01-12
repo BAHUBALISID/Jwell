@@ -473,7 +473,6 @@
             padding: 20px;
             background: #fff3cd;
             border-radius: 8px;
-            font-size: 14px;
         }
         
         .btn {
@@ -797,6 +796,84 @@
                 margin: 10px 0;
             }
         }
+
+        /* Exchange History Styles */
+        .exchange-history-section {
+            margin-top: 40px;
+            padding: 25px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+        }
+
+        .history-filters {
+            margin-bottom: 20px;
+        }
+
+        .history-filters .row {
+            display: flex;
+            flex-wrap: wrap;
+            margin: -10px;
+        }
+
+        .history-filters .col-md-3 {
+            flex: 0 0 25%;
+            max-width: 25%;
+            padding: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .history-filters .col-md-3 {
+                flex: 0 0 50%;
+                max-width: 50%;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .history-filters .col-md-3 {
+                flex: 0 0 100%;
+                max-width: 100%;
+            }
+        }
+
+        .history-table-container {
+            overflow-x: auto;
+            margin-top: 10px;
+        }
+
+        .history-table-container table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .history-table-container th,
+        .history-table-container td {
+            padding: 10px;
+            border: 1px solid #dee2e6;
+            text-align: left;
+        }
+
+        .history-table-container th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+        }
+
+        .history-table-container tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .text-success { color: #28a745; }
+        .text-danger { color: #dc3545; }
+        .text-info { color: #17a2b8; }
     </style>
 </head>
 <body>
@@ -997,6 +1074,50 @@
                     <button class="btn btn-sm btn-outline" onclick="addSampleDiamondItem()">
                         <i class="fas fa-gem"></i> Add Diamond Sample
                     </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Exchange History Section -->
+        <div class="exchange-history-section">
+            <div class="section-title" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3><i class="fas fa-history"></i> Exchange History</h3>
+                <div>
+                    <button class="btn btn-sm btn-info" id="refreshHistoryBtn">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                    <button class="btn btn-sm btn-primary" id="saveExchangeBtn">
+                        <i class="fas fa-save"></i> Save Current Exchange
+                    </button>
+                </div>
+            </div>
+            
+            <div class="history-filters">
+                <div class="row">
+                    <div class="col-md-3">
+                        <input type="text" class="form-control" id="searchExchange" placeholder="Search exchanges...">
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-control" id="statusFilter">
+                            <option value="">All Status</option>
+                            <option value="calculated">Calculated</option>
+                            <option value="converted_to_bill">Converted to Bill</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <input type="date" class="form-control" id="dateFrom" placeholder="From Date">
+                    </div>
+                    <div class="col-md-3">
+                        <input type="date" class="form-control" id="dateTo" placeholder="To Date">
+                    </div>
+                </div>
+            </div>
+            
+            <div id="exchangeHistoryContainer">
+                <div class="text-center text-muted" style="padding: 40px;">
+                    <i class="fas fa-history fa-3x" style="margin-bottom: 10px;"></i>
+                    <p>Loading exchange history...</p>
                 </div>
             </div>
         </div>
