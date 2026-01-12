@@ -47,12 +47,14 @@ const authRoutes = require('./routes/authRoutes');
 const billRoutes = require('./routes/billRoutes');
 const rateRoutes = require('./routes/rateRoutes');
 const reportRoutes = require('./routes/reportRoutes');
+const exchangeRoutes = require('./routes/exchangeRoutes'); // Add this line
 
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/bills', billRoutes);
 app.use('/api/rates', rateRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/exchanges', exchangeRoutes); // Add this line
 
 // Health check endpoint
 app.get('/health', (req, res) => {
