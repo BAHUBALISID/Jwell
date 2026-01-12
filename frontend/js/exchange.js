@@ -22,6 +22,7 @@ class ExchangeSystem {
         await this.loadRates();
         this.setupEventListeners();
         this.setupExchangeCalculator();
+        await this.loadExchangeHistory();
     }
 
     async loadRates() {
@@ -71,8 +72,11 @@ class ExchangeSystem {
         });
 
         // Print exchange bill button
-        document.getElementById('printExchangeBtn').addEventListener('click', () => {
-            this.previewExchangeBill();
+        document.getElementById('printExchangeBtn').addEventListener('click', async () => {
+            const saved = await this.saveExchange();
+            if (saved) {
+                this.previewExchangeBill();
+            }
         });
 
         // Proceed to billing button
@@ -83,6 +87,39 @@ class ExchangeSystem {
         // Reset form button
         document.getElementById('resetExchangeBtn').addEventListener('click', () => {
             this.resetExchange();
+        });
+
+        // Save exchange button
+        const saveExchangeBtn = document.getElementById('saveExchangeBtn');
+        if (saveExchangeBtn) {
+            saveExchangeBtn.addEventListener('click', () => {
+                this.saveExchange();
+            });
+        }
+
+        // Refresh history button
+        const refreshHistoryBtn = document.getElementById('refreshHistoryBtn');
+        if (refreshHistoryBtn) {
+            refreshHistoryBtn.addEventListener('click', () => {
+                this.loadExchangeHistory();
+            });
+        }
+
+        // Setup filter listeners
+        document.getElementById('searchExchange')?.addEventListener('input', (e) => {
+            this.filterExchanges(e.target.value);
+        });
+
+        document.getElementById('statusFilter')?.addEventListener('change', (e) => {
+            this.filterExchangesByStatus(e.target.value);
+        });
+
+        document.getElementById('dateFrom')?.addEventListener('change', (e) => {
+            this.filterExchangesByDate();
+        });
+
+        document.getElementById('dateTo')?.addEventListener('change', (e) => {
+            this.filterExchangesByDate();
         });
     }
 
@@ -101,6 +138,7 @@ class ExchangeSystem {
                             <div class="form-group">
                                 <label>Metal Type</label>
                                 <select class="form-control calc-metal" id="calcOldMetal">
+                                    <option value="">Select Metal *</option>
                                     ${metalOptions}
                                 </select>
                             </div>
@@ -156,7 +194,9 @@ class ExchangeSystem {
 
             // Initialize purity dropdown
             const metalSelect = document.getElementById('calcOldMetal');
-            this.updateCalculatorPurities(metalSelect.value);
+            if (metalSelect.value) {
+                this.updateCalculatorPurities(metalSelect.value);
+            }
             
             metalSelect.addEventListener('change', (e) => {
                 this.updateCalculatorPurities(e.target.value);
@@ -681,6 +721,153 @@ class ExchangeSystem {
         showAlert('success', 'Exchange calculated successfully');
     }
 
+    async saveExchange() {
+        try {
+            if (Object.keys(this.oldItems).length === 0 || Object.keys(this.newItems).length === 0) {
+                showAlert('warning', 'Please add at least one old item and one new item before saving');
+                return null;
+            }
+
+            // Prompt for customer details
+            const customerName = prompt('Enter customer name (required):', 'Walk-in Customer');
+            if (!customerName || customerName.trim() === '') {
+                showAlert('warning', 'Customer name is required');
+                return null;
+            }
+
+            const customerMobile = prompt('Enter customer mobile (optional):', '');
+
+            // Prepare exchange data
+            const exchangeData = {
+                customer: {
+                    name: customerName.trim(),
+                    mobile: customerMobile ? customerMobile.trim() : '',
+                    address: '',
+                    dob: '',
+                    pan: '',
+                    aadhaar: ''
+                },
+                oldItems: Object.values(this.oldItems).map(item => ({
+                    description: item.description || `${item.metalType} Item`,
+                    metalType: item.metalType,
+                    purity: item.purity,
+                    weight: item.weight,
+                    wastageDeduction: item.wastageDeduction || 0,
+                    meltingCharges: item.meltingCharges || 0,
+                    exchangeValue: this.calculateOldItemValue(item)
+                })),
+                newItems: Object.values(this.newItems).map(item => ({
+                    description: item.description || 'New Item',
+                    metalType: item.metalType,
+                    purity: item.purity,
+                    unit: item.unit,
+                    quantity: item.quantity,
+                    grossWeight: item.grossWeight,
+                    lessWeight: item.lessWeight,
+                    weight: item.weight,
+                    rate: item.rate,
+                    makingChargesType: item.makingChargesType,
+                    makingCharges: item.makingCharges,
+                    makingChargesDiscount: item.makingChargesDiscount,
+                    huid: item.huid,
+                    tunch: item.tunch,
+                    itemValue: this.calculateNewItemValue(item)
+                })),
+                totals: {
+                    oldItemsTotal: this.exchangeData.oldItemsTotal,
+                    newItemsTotal: this.exchangeData.newItemsTotal,
+                    balancePayable: this.exchangeData.balancePayable,
+                    balanceRefundable: this.exchangeData.balanceRefundable
+                },
+                notes: 'Created via exchange calculator'
+            };
+
+            // Save to database
+            const response = await fetch(`${this.apiBase}/exchanges`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${this.token}`
+                },
+                body: JSON.stringify(exchangeData)
+            });
+
+            const data = await response.json();
+            
+            if (data.success) {
+                showAlert('success', 'Exchange saved successfully!');
+                await this.loadExchangeHistory();
+                return data.exchange;
+            } else {
+                throw new Error(data.message || 'Failed to save exchange');
+            }
+
+        } catch (error) {
+            console.error('Save exchange error:', error);
+            showAlert('danger', 'Failed to save exchange: ' + error.message);
+            return null;
+        }
+    }
+
+    calculateOldItemValue(item) {
+        const rate = this.rates[item.metalType];
+        if (!rate) return 0;
+
+        let value = 0;
+        if (rate.unit === 'kg') {
+            value = (rate.rate / 1000) * item.weight;
+        } else {
+            value = rate.rate * item.weight;
+        }
+
+        // Apply purity adjustments for gold
+        if (item.metalType === 'Gold') {
+            if (item.purity === '22K') value = value * 0.9167;
+            else if (item.purity === '18K') value = value * 0.75;
+            else if (item.purity === '14K') value = value * 0.5833;
+        }
+
+        // Apply shop deduction (3%)
+        value = value * 0.97;
+
+        // Apply wastage deduction
+        if (item.wastageDeduction > 0) {
+            value = value * ((100 - item.wastageDeduction) / 100);
+        }
+
+        // Deduct melting charges
+        value = Math.max(0, value - (item.meltingCharges || 0));
+
+        return value;
+    }
+
+    calculateNewItemValue(item) {
+        const rate = this.rates[item.metalType];
+        if (!rate) return 0;
+
+        let itemValue = 0;
+        if (rate.unit === 'kg') {
+            itemValue = (rate.rate / 1000) * item.weight;
+        } else {
+            itemValue = rate.rate * item.weight;
+        }
+
+        let makingAmount = 0;
+        if (item.makingChargesType === 'percentage') {
+            makingAmount = (itemValue * (item.makingCharges || 0)) / 100;
+        } else if (item.makingChargesType === 'GRM') {
+            makingAmount = (item.makingCharges || 0) * item.weight;
+        } else {
+            makingAmount = item.makingCharges || 0;
+        }
+
+        if (item.makingChargesDiscount && item.makingChargesDiscount > 0) {
+            makingAmount = makingAmount - (makingAmount * item.makingChargesDiscount / 100);
+        }
+
+        return itemValue + makingAmount;
+    }
+
     previewExchangeBill() {
         if (!this.exchangeData || !this.exchangeData.oldItems || this.exchangeData.oldItems.length === 0) {
             showAlert('warning', 'Please add at least one old item and one new item before printing');
@@ -823,7 +1010,7 @@ class ExchangeSystem {
             </div>
         `;
 
-        // Generate QR code
+        // Generate QR code data
         const qrData = {
             shop: 'Shri Mahakaleshwar Jewellers',
             exchangeNumber: exchangeNumber,
@@ -836,13 +1023,13 @@ class ExchangeSystem {
             address: 'Anisabad, Patna, Bihar'
         };
 
+        // Generate QR code
         try {
-            // Clear previous QR code
             const qrContainer = document.getElementById('exchangeQRCode');
             qrContainer.innerHTML = '';
             
-            // Generate new QR code
-            QRCode.toCanvas(qrContainer, JSON.stringify(qrData), {
+            // Using QRCode library directly
+            QRCode.toCanvas(JSON.stringify(qrData), {
                 width: 150,
                 height: 150,
                 margin: 1,
@@ -850,14 +1037,21 @@ class ExchangeSystem {
                     dark: '#000000',
                     light: '#FFFFFF'
                 }
-            }, function (error) {
+            }, function (error, canvas) {
                 if (error) {
                     console.error('QR Code generation error:', error);
-                    qrContainer.innerHTML = '<p>QR Code generation failed</p>';
+                    // Fallback to API
+                    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(JSON.stringify(qrData))}`;
+                    qrContainer.innerHTML = `<img src="${qrCodeUrl}" alt="QR Code" width="150" height="150">`;
+                } else {
+                    qrContainer.appendChild(canvas);
                 }
             });
         } catch (error) {
             console.error('QR Code error:', error);
+            const qrContainer = document.getElementById('exchangeQRCode');
+            const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(JSON.stringify(qrData))}`;
+            qrContainer.innerHTML = `<img src="${qrCodeUrl}" alt="QR Code" width="150" height="150">`;
         }
 
         showExchangePreview();
@@ -1055,19 +1249,23 @@ class ExchangeSystem {
             if (qrContainer) {
                 qrContainer.innerHTML = '';
                 
-                QRCode.toCanvas(qrContainer, JSON.stringify(qrData), {
-                    width: 150,
-                    height: 150,
-                    margin: 1,
-                    color: {
-                        dark: '#000000',
-                        light: '#FFFFFF'
-                    }
-                }, function (error) {
-                    if (error) {
-                        console.error('Print QR Code error:', error);
-                        qrContainer.innerHTML = '<p>QR Code</p>';
-                    } else {
+                try {
+                    QRCode.toCanvas(JSON.stringify(qrData), {
+                        width: 150,
+                        height: 150,
+                        margin: 1,
+                        color: {
+                            dark: '#000000',
+                            light: '#FFFFFF'
+                        }
+                    }, function (error, canvas) {
+                        if (error) {
+                            console.error('Print QR Code error:', error);
+                            qrContainer.innerHTML = '<p>QR Code</p>';
+                        } else {
+                            qrContainer.appendChild(canvas);
+                        }
+                        
                         // Print after QR code is generated
                         setTimeout(() => {
                             window.print();
@@ -1076,8 +1274,18 @@ class ExchangeSystem {
                                 printContainer.innerHTML = '';
                             }, 1000);
                         }, 500);
-                    }
-                });
+                    });
+                } catch (error) {
+                    console.error('QR Code generation error:', error);
+                    // Print even if QR code fails
+                    setTimeout(() => {
+                        window.print();
+                        setTimeout(() => {
+                            printContainer.style.display = 'none';
+                            printContainer.innerHTML = '';
+                        }, 1000);
+                    }, 500);
+                }
             } else {
                 // If QR fails, still print
                 setTimeout(() => {
@@ -1166,6 +1374,496 @@ class ExchangeSystem {
             
             showAlert('info', 'Exchange form reset successfully');
         }
+    }
+
+    async loadExchangeHistory() {
+        try {
+            const response = await fetch(`${this.apiBase}/exchanges?limit=50`, {
+                headers: {
+                    'Authorization': `Bearer ${this.token}`
+                }
+            });
+
+            const data = await response.json();
+            
+            if (data.success) {
+                this.displayExchangeHistory(data.exchanges);
+            } else {
+                throw new Error(data.message || 'Failed to load exchange history');
+            }
+        } catch (error) {
+            console.error('Load exchange history error:', error);
+            showAlert('danger', 'Failed to load exchange history: ' + error.message);
+        }
+    }
+
+    displayExchangeHistory(exchanges) {
+        const container = document.getElementById('exchangeHistoryContainer');
+        if (!container) return;
+
+        if (!exchanges || exchanges.length === 0) {
+            container.innerHTML = `
+                <div class="text-center text-muted" style="padding: 20px;">
+                    <i class="fas fa-history fa-3x" style="margin-bottom: 10px;"></i>
+                    <p>No exchange history found</p>
+                </div>
+            `;
+            return;
+        }
+
+        let html = `
+            <div class="history-table-container" style="overflow-x: auto;">
+                <table class="table" style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                    <thead>
+                        <tr style="background-color: #f8f9fa;">
+                            <th style="padding: 10px; border: 1px solid #dee2e6;">Exchange No.</th>
+                            <th style="padding: 10px; border: 1px solid #dee2e6;">Date</th>
+                            <th style="padding: 10px; border: 1px solid #dee2e6;">Customer</th>
+                            <th style="padding: 10px; border: 1px solid #dee2e6;">Old Items</th>
+                            <th style="padding: 10px; border: 1px solid #dee2e6;">New Items</th>
+                            <th style="padding: 10px; border: 1px solid #dee2e6;">Old Total</th>
+                            <th style="padding: 10px; border: 1px solid #dee2e6;">New Total</th>
+                            <th style="padding: 10px; border: 1px solid #dee2e6;">Balance</th>
+                            <th style="padding: 10px; border: 1px solid #dee2e6;">Status</th>
+                            <th style="padding: 10px; border: 1px solid #dee2e6;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+
+        exchanges.forEach(exchange => {
+            const date = new Date(exchange.createdAt).toLocaleDateString('en-IN');
+            const time = new Date(exchange.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+            const statusClass = exchange.status === 'converted_to_bill' ? 'success' : 
+                               exchange.status === 'cancelled' ? 'danger' : 'info';
+            
+            html += `
+                <tr style="border-bottom: 1px solid #dee2e6;">
+                    <td style="padding: 10px; border: 1px solid #dee2e6;"><strong>${exchange.exchangeNumber}</strong></td>
+                    <td style="padding: 10px; border: 1px solid #dee2e6;">${date}<br><small>${time}</small></td>
+                    <td style="padding: 10px; border: 1px solid #dee2e6;">${exchange.customer?.name || 'N/A'}<br>
+                        <small>${exchange.customer?.mobile || ''}</small></td>
+                    <td style="padding: 10px; border: 1px solid #dee2e6;">${exchange.oldItems.length} items</td>
+                    <td style="padding: 10px; border: 1px solid #dee2e6;">${exchange.newItems.length} items</td>
+                    <td style="padding: 10px; border: 1px solid #dee2e6;">₹${exchange.totals.oldItemsTotal.toFixed(2)}</td>
+                    <td style="padding: 10px; border: 1px solid #dee2e6;">₹${exchange.totals.newItemsTotal.toFixed(2)}</td>
+                    <td style="padding: 10px; border: 1px solid #dee2e6;">
+                        ${exchange.totals.balancePayable > 0 ? 
+                            `<span class="text-danger">Pay: ₹${exchange.totals.balancePayable.toFixed(2)}</span>` :
+                            `<span class="text-success">Refund: ₹${exchange.totals.balanceRefundable.toFixed(2)}</span>`}
+                    </td>
+                    <td style="padding: 10px; border: 1px solid #dee2e6;">
+                        <span class="badge" style="background-color: ${statusClass === 'success' ? '#28a745' : statusClass === 'danger' ? '#dc3545' : '#17a2b8'}; color: white; padding: 3px 8px; border-radius: 12px;">
+                            ${exchange.status.replace('_', ' ').toUpperCase()}
+                        </span>
+                    </td>
+                    <td style="padding: 10px; border: 1px solid #dee2e6;">
+                        <button class="btn btn-sm btn-info" onclick="exchangeSystem.viewExchangeDetails('${exchange._id}')" style="margin-right: 5px;">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="btn btn-sm btn-primary" onclick="exchangeSystem.loadExchangeToForm('${exchange._id}')">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+
+        html += `
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+        container.innerHTML = html;
+    }
+
+    async viewExchangeDetails(exchangeId) {
+        try {
+            // First get all exchanges
+            const response = await fetch(`${this.apiBase}/exchanges`, {
+                headers: {
+                    'Authorization': `Bearer ${this.token}`
+                }
+            });
+
+            const data = await response.json();
+            
+            if (data.success) {
+                const exchange = data.exchanges.find(e => e._id === exchangeId);
+                if (exchange) {
+                    this.showExchangeDetailsModal(exchange);
+                }
+            }
+        } catch (error) {
+            console.error('View exchange error:', error);
+            showAlert('danger', 'Failed to load exchange details');
+        }
+    }
+
+    showExchangeDetailsModal(exchange) {
+        const modal = document.createElement('div');
+        modal.className = 'modal show';
+        modal.style.display = 'block';
+        modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+        modal.innerHTML = `
+            <div class="modal-dialog modal-xl" style="max-width: 90%; margin: 30px auto;">
+                <div class="modal-content">
+                    <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                        <h5 class="modal-title">
+                            <i class="fas fa-file-invoice"></i> Exchange Details - ${exchange.exchangeNumber}
+                        </h5>
+                        <button type="button" class="close" onclick="this.parentElement.parentElement.parentElement.remove()" style="color: white;">
+                            <span>&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Customer Information</h6>
+                                <p><strong>Name:</strong> ${exchange.customer?.name || 'N/A'}</p>
+                                <p><strong>Mobile:</strong> ${exchange.customer?.mobile || 'N/A'}</p>
+                                <p><strong>Date:</strong> ${new Date(exchange.createdAt).toLocaleString('en-IN')}</p>
+                                <p><strong>Created By:</strong> ${exchange.createdBy?.name || 'Unknown'}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Exchange Summary</h6>
+                                <p><strong>Old Items Total:</strong> ₹${exchange.totals.oldItemsTotal.toFixed(2)}</p>
+                                <p><strong>New Items Total:</strong> ₹${exchange.totals.newItemsTotal.toFixed(2)}</p>
+                                <p><strong>Balance:</strong> 
+                                    ${exchange.totals.balancePayable > 0 ? 
+                                        `Payable: ₹${exchange.totals.balancePayable.toFixed(2)}` : 
+                                        `Refundable: ₹${exchange.totals.balanceRefundable.toFixed(2)}`}
+                                </p>
+                                <p><strong>Status:</strong> 
+                                    <span class="badge" style="background-color: ${exchange.status === 'converted_to_bill' ? '#28a745' : exchange.status === 'cancelled' ? '#dc3545' : '#17a2b8'}; color: white; padding: 3px 8px; border-radius: 12px;">
+                                        ${exchange.status.replace('_', ' ').toUpperCase()}
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <h6>Old Items for Exchange</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm" style="font-size: 12px;">
+                                        <thead>
+                                            <tr>
+                                                <th>#</th>
+                                                <th>Description</th>
+                                                <th>Metal</th>
+                                                <th>Purity</th>
+                                                <th>Weight</th>
+                                                <th>Wastage</th>
+                                                <th>Melting</th>
+                                                <th>Value</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${exchange.oldItems.map((item, index) => `
+                                                <tr>
+                                                    <td>${index + 1}</td>
+                                                    <td>${item.description}</td>
+                                                    <td>${item.metalType}</td>
+                                                    <td>${item.purity}</td>
+                                                    <td>${item.weight.toFixed(3)}</td>
+                                                    <td>${item.wastageDeduction}%</td>
+                                                    <td>₹${item.meltingCharges.toFixed(2)}</td>
+                                                    <td>₹${item.exchangeValue.toFixed(2)}</td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>New Items for Purchase</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm" style="font-size: 12px;">
+                                        <thead>
+                                            <tr>
+                                                <th>#</th>
+                                                <th>Description</th>
+                                                <th>Metal</th>
+                                                <th>Purity</th>
+                                                <th>Weight</th>
+                                                <th>Rate</th>
+                                                <th>Making</th>
+                                                <th>Value</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${exchange.newItems.map((item, index) => `
+                                                <tr>
+                                                    <td>${index + 1}</td>
+                                                    <td>${item.description}</td>
+                                                    <td>${item.metalType}</td>
+                                                    <td>${item.purity}</td>
+                                                    <td>${item.weight.toFixed(3)}</td>
+                                                    <td>₹${item.rate.toFixed(2)}</td>
+                                                    <td>${item.makingChargesType === 'percentage' ? item.makingCharges + '%' : '₹' + item.makingCharges}</td>
+                                                    <td>₹${item.itemValue.toFixed(2)}</td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        ${exchange.qrCode ? `
+                        <div class="row mt-3">
+                            <div class="col-md-12 text-center">
+                                <h6>QR Code</h6>
+                                <img src="${exchange.qrCode}" alt="QR Code" style="max-width: 150px; border: 1px solid #ddd; padding: 10px;">
+                                <p style="margin-top: 10px;"><small>Scan for exchange details</small></p>
+                            </div>
+                        </div>
+                        ` : ''}
+                        
+                        ${exchange.notes ? `
+                        <div class="row mt-3">
+                            <div class="col-md-12">
+                                <h6>Notes</h6>
+                                <div style="background-color: #f8f9fa; padding: 10px; border-radius: 5px;">
+                                    <p>${exchange.notes}</p>
+                                </div>
+                            </div>
+                        </div>
+                        ` : ''}
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="this.parentElement.parentElement.parentElement.remove()">
+                            <i class="fas fa-times"></i> Close
+                        </button>
+                        ${exchange.status === 'calculated' ? `
+                        <button type="button" class="btn btn-primary" onclick="exchangeSystem.convertExchangeToBill('${exchange._id}')">
+                            <i class="fas fa-file-invoice-dollar"></i> Convert to Bill
+                        </button>
+                        ` : ''}
+                        <button type="button" class="btn btn-info" onclick="exchangeSystem.printExchangeFromHistory('${exchange._id}')">
+                            <i class="fas fa-print"></i> Print
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+    }
+
+    async loadExchangeToForm(exchangeId) {
+        try {
+            // First get all exchanges
+            const response = await fetch(`${this.apiBase}/exchanges`, {
+                headers: {
+                    'Authorization': `Bearer ${this.token}`
+                }
+            });
+
+            const data = await response.json();
+            
+            if (data.success) {
+                const exchange = data.exchanges.find(e => e._id === exchangeId);
+                if (exchange) {
+                    // Reset current form
+                    this.resetExchange();
+                    
+                    // Load old items
+                    exchange.oldItems.forEach(oldItem => {
+                        this.addOldItemRow();
+                        const container = document.getElementById('oldItemsContainer');
+                        const lastRow = container.lastElementChild;
+                        
+                        if (lastRow) {
+                            lastRow.querySelector('.item-description').value = oldItem.description;
+                            lastRow.querySelector('.exchange-metal-type').value = oldItem.metalType;
+                            
+                            const puritySelect = lastRow.querySelector('.exchange-purity');
+                            if (puritySelect) {
+                                this.updatePurities(oldItem.metalType, lastRow.id);
+                                setTimeout(() => {
+                                    puritySelect.value = oldItem.purity;
+                                }, 100);
+                            }
+                            
+                            lastRow.querySelector('.weight').value = oldItem.weight;
+                            lastRow.querySelector('.wastage').value = oldItem.wastageDeduction;
+                            lastRow.querySelector('.melting').value = oldItem.meltingCharges;
+                        }
+                    });
+                    
+                    // Load new items
+                    exchange.newItems.forEach(newItem => {
+                        this.addNewItemRow();
+                        const container = document.getElementById('newItemsContainer');
+                        const lastRow = container.lastElementChild;
+                        
+                        if (lastRow) {
+                            lastRow.querySelector('.item-description').value = newItem.description;
+                            lastRow.querySelector('.exchange-metal-type').value = newItem.metalType;
+                            
+                            const puritySelect = lastRow.querySelector('.exchange-purity');
+                            if (puritySelect) {
+                                this.updatePurities(newItem.metalType, lastRow.id);
+                                setTimeout(() => {
+                                    puritySelect.value = newItem.purity;
+                                }, 100);
+                            }
+                            
+                            lastRow.querySelector('.unit').value = newItem.unit;
+                            lastRow.querySelector('.quantity').value = newItem.quantity;
+                            lastRow.querySelector('.gross-weight').value = newItem.grossWeight;
+                            lastRow.querySelector('.less-weight').value = newItem.lessWeight;
+                            lastRow.querySelector('.net-weight').value = newItem.weight;
+                            lastRow.querySelector('.rate').value = newItem.rate;
+                            lastRow.querySelector('.making-charges-type').value = newItem.makingChargesType;
+                            lastRow.querySelector('.making-charges').value = newItem.makingCharges;
+                            lastRow.querySelector('.making-discount').value = newItem.makingChargesDiscount;
+                            lastRow.querySelector('.huid').value = newItem.huid;
+                            lastRow.querySelector('.tunch').value = newItem.tunch;
+                        }
+                    });
+                    
+                    // Update summary
+                    setTimeout(() => {
+                        this.updateExchangeSummary();
+                        showAlert('success', 'Exchange loaded successfully!');
+                    }, 500);
+                }
+            }
+        } catch (error) {
+            console.error('Load exchange to form error:', error);
+            showAlert('danger', 'Failed to load exchange to form');
+        }
+    }
+
+    async convertExchangeToBill(exchangeId) {
+        if (confirm('Convert this exchange to a bill? This will create a new bill in the billing system.')) {
+            try {
+                const response = await fetch(`${this.apiBase}/exchanges/${exchangeId}/convert-to-bill`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${this.token}`
+                    },
+                    body: JSON.stringify({
+                        billNumber: 'BILL-' + Date.now().toString().slice(-8)
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    showAlert('success', 'Exchange converted to bill successfully!');
+                    await this.loadExchangeHistory();
+                    // Close the modal
+                    const modal = document.querySelector('.modal.show');
+                    if (modal) modal.remove();
+                } else {
+                    throw new Error(data.message || 'Failed to convert exchange to bill');
+                }
+            } catch (error) {
+                console.error('Convert exchange to bill error:', error);
+                showAlert('danger', 'Failed to convert exchange to bill: ' + error.message);
+            }
+        }
+    }
+
+    async printExchangeFromHistory(exchangeId) {
+        try {
+            // First get all exchanges
+            const response = await fetch(`${this.apiBase}/exchanges`, {
+                headers: {
+                    'Authorization': `Bearer ${this.token}`
+                }
+            });
+
+            const data = await response.json();
+            
+            if (data.success) {
+                const exchange = data.exchanges.find(e => e._id === exchangeId);
+                if (exchange) {
+                    // Set current exchange data
+                    this.exchangeData = {
+                        oldItems: exchange.oldItems.map(item => ({
+                            ...item,
+                            calculatedValue: item.exchangeValue
+                        })),
+                        newItems: exchange.newItems.map(item => ({
+                            ...item,
+                            calculatedValue: item.itemValue
+                        })),
+                        oldItemsTotal: exchange.totals.oldItemsTotal,
+                        newItemsTotal: exchange.totals.newItemsTotal,
+                        balance: exchange.totals.oldItemsTotal - exchange.totals.newItemsTotal,
+                        balancePayable: exchange.totals.balancePayable,
+                        balanceRefundable: exchange.totals.balanceRefundable,
+                        exchangeNumber: exchange.exchangeNumber
+                    };
+                    
+                    this.printExchangeBill();
+                }
+            }
+        } catch (error) {
+            console.error('Print exchange from history error:', error);
+            showAlert('danger', 'Failed to print exchange');
+        }
+    }
+
+    filterExchanges(searchTerm) {
+        const table = document.querySelector('#exchangeHistoryContainer table');
+        if (!table) return;
+        
+        const rows = table.querySelectorAll('tbody tr');
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(searchTerm.toLowerCase()) ? '' : 'none';
+        });
+    }
+
+    filterExchangesByStatus(status) {
+        const table = document.querySelector('#exchangeHistoryContainer table');
+        if (!table) return;
+        
+        const rows = table.querySelectorAll('tbody tr');
+        rows.forEach(row => {
+            const statusCell = row.querySelector('td:nth-child(9)');
+            if (statusCell) {
+                const rowStatus = statusCell.textContent.toLowerCase();
+                row.style.display = !status || rowStatus.includes(status.toLowerCase()) ? '' : 'none';
+            }
+        });
+    }
+
+    filterExchangesByDate() {
+        const dateFrom = document.getElementById('dateFrom').value;
+        const dateTo = document.getElementById('dateTo').value;
+        
+        const table = document.querySelector('#exchangeHistoryContainer table');
+        if (!table) return;
+        
+        const rows = table.querySelectorAll('tbody tr');
+        rows.forEach(row => {
+            const dateCell = row.querySelector('td:nth-child(2)');
+            if (dateCell) {
+                const rowDateText = dateCell.textContent.split('\n')[0];
+                const rowDate = new Date(rowDateText.split('/').reverse().join('-'));
+                
+                let show = true;
+                if (dateFrom) {
+                    const fromDate = new Date(dateFrom);
+                    show = show && rowDate >= fromDate;
+                }
+                if (dateTo) {
+                    const toDate = new Date(dateTo);
+                    show = show && rowDate <= toDate;
+                }
+                
+                row.style.display = show ? '' : 'none';
+            }
+        });
     }
 }
 
