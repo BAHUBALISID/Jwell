@@ -52,45 +52,6 @@
             z-index: 1;
         }
 
-        /* Floating jewellery elements */
-        .floating-gem {
-            position: absolute;
-            width: 80px;
-            height: 80px;
-            background: radial-gradient(circle, var(--luxury-gold), transparent 70%);
-            border-radius: 50%;
-            filter: blur(20px);
-            animation: float 20s infinite ease-in-out;
-            z-index: 1;
-        }
-
-        .floating-gem:nth-child(1) {
-            top: 10%;
-            left: 10%;
-            animation-delay: 0s;
-        }
-
-        .floating-gem:nth-child(2) {
-            top: 70%;
-            right: 10%;
-            animation-delay: 5s;
-            width: 120px;
-            height: 120px;
-        }
-
-        .floating-gem:nth-child(3) {
-            bottom: 20%;
-            left: 20%;
-            animation-delay: 10s;
-            width: 60px;
-            height: 60px;
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0) rotate(0deg); }
-            50% { transform: translateY(-20px) rotate(180deg); }
-        }
-
         /* Login Container */
         .login-container {
             display: flex;
@@ -107,8 +68,8 @@
             border: 1px solid rgba(212, 175, 55, 0.1);
         }
 
-        /* Left Side - Branding */
-        .brand-side {
+        /* Left Side - Logo Only */
+        .logo-side {
             flex: 1;
             background: linear-gradient(135deg, rgba(13, 13, 13, 0.95), rgba(26, 26, 26, 0.95)),
                         url('https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80');
@@ -118,12 +79,13 @@
             padding: 60px;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
+            justify-content: center;
+            align-items: center;
             position: relative;
             overflow: hidden;
         }
 
-        .brand-side::before {
+        .logo-side::before {
             content: '';
             position: absolute;
             top: 0;
@@ -134,21 +96,24 @@
             z-index: 1;
         }
 
-        .brand-content {
+        .logo-content {
             position: relative;
             z-index: 2;
+            text-align: center;
+            width: 100%;
         }
 
-        .logo {
+        .logo-container {
             display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 20px;
+            gap: 30px;
             margin-bottom: 40px;
         }
 
         .logo-icon {
-            width: 60px;
-            height: 60px;
+            width: 120px; /* Increased from 60px */
+            height: 120px; /* Increased from 60px */
             background: linear-gradient(135deg, var(--luxury-gold), var(--deep-gold));
             border-radius: 50%;
             display: flex;
@@ -156,8 +121,9 @@
             justify-content: center;
             font-size: 28px;
             color: var(--dark-bg);
-            box-shadow: 0 10px 30px rgba(212, 175, 55, 0.3);
+            box-shadow: 0 15px 40px rgba(212, 175, 55, 0.3);
             overflow: hidden;
+            border: 4px solid rgba(255, 255, 255, 0.1);
         }
 
         .logo-icon img {
@@ -165,12 +131,13 @@
             height: 100%;
             object-fit: contain;
             border-radius: 50%;
+            padding: 5px;
         }
 
         .logo-text h1 {
             /* Changed from Playfair Display to Samarkan */
             font-family: 'Samarkan', 'Playfair Display', serif;
-            font-size: 32px;
+            font-size: 42px; /* Increased from 32px */
             font-weight: 400;
             background: linear-gradient(135deg, var(--luxury-gold), var(--light-gold));
             -webkit-background-clip: text;
@@ -178,79 +145,15 @@
             background-clip: text;
             margin-bottom: 5px;
             letter-spacing: 1px;
+            line-height: 1.2;
         }
 
         .logo-text p {
-            font-size: 14px;
+            font-size: 16px; /* Increased from 14px */
             color: var(--text-muted);
             letter-spacing: 2px;
             text-transform: uppercase;
-        }
-
-        .brand-quote {
-            margin-top: 40px;
-            position: relative;
-            padding-left: 20px;
-            border-left: 3px solid var(--luxury-gold);
-        }
-
-        .brand-quote h2 {
-            font-family: 'Playfair Display', serif;
-            font-size: 36px;
-            line-height: 1.3;
-            margin-bottom: 20px;
-            background: linear-gradient(135deg, #ffffff, var(--text-muted));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .brand-quote p {
-            font-size: 16px;
-            color: var(--text-muted);
-            line-height: 1.6;
-        }
-
-        .brand-features {
-            margin-top: 50px;
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
-        }
-
-        .feature {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 15px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
-            border: 1px solid rgba(212, 175, 55, 0.1);
-            transition: all 0.3s ease;
-        }
-
-        .feature:hover {
-            transform: translateY(-5px);
-            border-color: var(--luxury-gold);
-            background: rgba(212, 175, 55, 0.1);
-        }
-
-        .feature i {
-            color: var(--luxury-gold);
-            font-size: 20px;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(212, 175, 55, 0.1);
-            border-radius: 50%;
-        }
-
-        .feature span {
-            font-size: 14px;
-            color: var(--text-light);
-            font-weight: 500;
+            margin-top: 10px;
         }
 
         /* Right Side - Login Form */
@@ -595,25 +498,17 @@
                 min-height: auto;
             }
 
-            .brand-side {
-                padding: 40px;
-            }
-
+            .logo-side,
             .login-side {
                 padding: 40px;
             }
 
-            .brand-quote h2 {
-                font-size: 28px;
+            .logo-text h1 {
+                font-size: 32px;
             }
 
             .credential-grid {
                 grid-template-columns: 1fr;
-            }
-            
-            /* Adjust Samarkan font size for smaller screens */
-            .logo-text h1 {
-                font-size: 28px;
             }
         }
 
@@ -623,23 +518,13 @@
                 min-height: 100vh;
             }
 
-            .brand-side,
+            .logo-side,
             .login-side {
                 padding: 30px;
             }
 
-            .logo {
-                flex-direction: column;
-                text-align: center;
-                gap: 15px;
-            }
-
-            .brand-quote h2 {
-                font-size: 24px;
-            }
-
-            .brand-features {
-                grid-template-columns: 1fr;
+            .logo-text h1 {
+                font-size: 28px;
             }
 
             .form-options {
@@ -648,9 +533,9 @@
                 gap: 15px;
             }
             
-            /* Adjust Samarkan font size for mobile */
-            .logo-text h1 {
-                font-size: 24px;
+            .logo-icon {
+                width: 100px;
+                height: 100px;
             }
         }
 
@@ -695,57 +580,19 @@
     <!-- Background Pattern -->
     <div class="bg-pattern"></div>
     
-    <!-- Floating Jewellery Elements -->
-    <div class="floating-gem"></div>
-    <div class="floating-gem"></div>
-    <div class="floating-gem"></div>
-    
     <!-- Login Container -->
     <div class="login-container">
-        <!-- Left Side - Branding -->
-        <div class="brand-side">
-            <div class="brand-content">
-                <div class="logo">
+        <!-- Left Side - Big Logo Only -->
+        <div class="logo-side">
+            <div class="logo-content">
+                <div class="logo-container">
                     <div class="logo-icon">
-                        <!-- Changed from gem icon to logo.png -->
                         <img src="logo.png" alt="Shri Mahakaleshwar Jewellers Logo">
                     </div>
                     <div class="logo-text">
                         <!-- This text now uses Samarkan font -->
                         <h1>Shri Mahakaleshwar Jewellers</h1>
-                        <p>Since 1985</p>
-                    </div>
-                </div>
-                
-                <div class="brand-quote">
-                    <h2>Where Tradition Meets Elegance</h2>
-                    <p>For over three decades, we've been crafting timeless pieces that tell stories. Now, experience our legacy through our state-of-the-art digital platform.</p>
-                </div>
-                
-                <div class="brand-features">
-                    <div class="feature">
-                        <i class="fas fa-shield-alt"></i>
-                        <span>Bank-Level Security</span>
-                    </div>
-                    <div class="feature">
-                        <i class="fas fa-bolt"></i>
-                        <span>Lightning Fast Billing</span>
-                    </div>
-                    <div class="feature">
-                        <i class="fas fa-chart-line"></i>
-                        <span>AI Business Insights</span>
-                    </div>
-                    <div class="feature">
-                        <i class="fas fa-qrcode"></i>
-                        <span>Digital Verification</span>
-                    </div>
-                    <div class="feature">
-                        <i class="fas fa-exchange-alt"></i>
-                        <span>Smart Exchange System</span>
-                    </div>
-                    <div class="feature">
-                        <i class="fas fa-print"></i>
-                        <span>Professional Invoices</span>
+                        <p>Premium Billing System</p>
                     </div>
                 </div>
             </div>
