@@ -3,10 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Shri Mahakaleshwar Jewellers | Premium Billing System</title>
-    <link rel="stylesheet" href="css/style.css">
+    <title>Login - Shri Mahakaleshwar Jewellers</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
             --luxury-gold: #D4AF37;
@@ -25,270 +23,64 @@
         }
 
         body {
-            font-family: 'Montserrat', sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #0c0c0c 0%, #1a1a1a 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             color: var(--text-light);
-            position: relative;
-            overflow-x: hidden;
+            padding: 20px;
         }
 
-        /* Background pattern */
-        .bg-pattern {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: 
-                radial-gradient(circle at 20% 80%, rgba(212, 175, 55, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(212, 175, 55, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 40% 40%, rgba(212, 175, 55, 0.05) 0%, transparent 50%);
-            z-index: 1;
-        }
-
-        /* Floating jewellery elements */
-        .floating-gem {
-            position: absolute;
-            width: 80px;
-            height: 80px;
-            background: radial-gradient(circle, var(--luxury-gold), transparent 70%);
-            border-radius: 50%;
-            filter: blur(20px);
-            animation: float 20s infinite ease-in-out;
-            z-index: 1;
-        }
-
-        .floating-gem:nth-child(1) {
-            top: 10%;
-            left: 10%;
-            animation-delay: 0s;
-        }
-
-        .floating-gem:nth-child(2) {
-            top: 70%;
-            right: 10%;
-            animation-delay: 5s;
-            width: 120px;
-            height: 120px;
-        }
-
-        .floating-gem:nth-child(3) {
-            bottom: 20%;
-            left: 20%;
-            animation-delay: 10s;
-            width: 60px;
-            height: 60px;
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0) rotate(0deg); }
-            50% { transform: translateY(-20px) rotate(180deg); }
-        }
-
-        /* Login Container */
         .login-container {
-            display: flex;
             width: 100%;
-            max-width: 1200px;
-            min-height: 700px;
+            max-width: 500px;
             background: rgba(26, 26, 26, 0.95);
             border-radius: 20px;
-            overflow: hidden;
+            padding: 40px;
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
-            position: relative;
-            z-index: 2;
-            backdrop-filter: blur(10px);
             border: 1px solid rgba(212, 175, 55, 0.1);
         }
 
-        /* Left Side - Branding */
-        .brand-side {
-            flex: 1;
-            background: linear-gradient(135deg, rgba(13, 13, 13, 0.95), rgba(26, 26, 26, 0.95)),
-                        url('https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80');
-            background-size: cover;
-            background-position: center;
-            background-blend-mode: overlay;
-            padding: 60px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .brand-side::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(45deg, rgba(212, 175, 55, 0.1), transparent 60%);
-            z-index: 1;
-        }
-
-        .brand-content {
-            position: relative;
-            z-index: 2;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 20px;
+        .logo-header {
+            text-align: center;
             margin-bottom: 40px;
         }
 
-        .logo-icon {
-            width: 60px;
-            height: 60px;
-            background: linear-gradient(135deg, var(--luxury-gold), var(--deep-gold));
+        .logo-img {
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 20px;
+            display: block;
             border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 28px;
-            color: var(--dark-bg);
-            box-shadow: 0 10px 30px rgba(212, 175, 55, 0.3);
-            overflow: hidden; /* Added to ensure logo image stays within bounds */
-        }
-
-        .logo-icon img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            border-radius: 50%;
-        }
-
-        .logo-text h1 {
-            font-family: 'Playfair Display', serif;
-            font-size: 32px;
-            font-weight: 700;
-            background: linear-gradient(135deg, var(--luxury-gold), var(--light-gold));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 5px;
-        }
-
-        .logo-text p {
-            font-size: 14px;
-            color: var(--text-muted);
-            letter-spacing: 2px;
-            text-transform: uppercase;
-        }
-
-        .brand-quote {
-            margin-top: 40px;
-            position: relative;
-            padding-left: 20px;
-            border-left: 3px solid var(--luxury-gold);
-        }
-
-        .brand-quote h2 {
-            font-family: 'Playfair Display', serif;
-            font-size: 36px;
-            line-height: 1.3;
-            margin-bottom: 20px;
-            background: linear-gradient(135deg, #ffffff, var(--text-muted));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .brand-quote p {
-            font-size: 16px;
-            color: var(--text-muted);
-            line-height: 1.6;
-        }
-
-        .brand-features {
-            margin-top: 50px;
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
-        }
-
-        .feature {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 15px;
+            border: 3px solid var(--luxury-gold);
+            padding: 5px;
             background: rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
-            border: 1px solid rgba(212, 175, 55, 0.1);
-            transition: all 0.3s ease;
         }
 
-        .feature:hover {
-            transform: translateY(-5px);
-            border-color: var(--luxury-gold);
-            background: rgba(212, 175, 55, 0.1);
-        }
-
-        .feature i {
-            color: var(--luxury-gold);
-            font-size: 20px;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(212, 175, 55, 0.1);
-            border-radius: 50%;
-        }
-
-        .feature span {
-            font-size: 14px;
+        .logo-header h1 {
+            font-size: 28px;
             color: var(--text-light);
-            font-weight: 500;
-        }
-
-        /* Right Side - Login Form */
-        .login-side {
-            flex: 1;
-            padding: 60px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            position: relative;
-        }
-
-        .login-header {
-            text-align: center;
-            margin-bottom: 50px;
-        }
-
-        .login-header h2 {
-            font-family: 'Playfair Display', serif;
-            font-size: 36px;
+            margin-bottom: 8px;
             background: linear-gradient(135deg, var(--luxury-gold), var(--light-gold));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            margin-bottom: 15px;
         }
 
-        .login-header p {
+        .logo-header p {
             color: var(--text-muted);
-            font-size: 16px;
+            font-size: 14px;
+            letter-spacing: 2px;
         }
 
-        /* Form Styles */
         .login-form {
-            width: 100%;
-            max-width: 400px;
-            margin: 0 auto;
+            margin-bottom: 30px;
         }
 
         .form-group {
             margin-bottom: 25px;
-            position: relative;
         }
 
         .form-group label {
@@ -297,33 +89,16 @@
             color: var(--text-light);
             font-size: 14px;
             font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .input-with-icon {
-            position: relative;
-        }
-
-        .input-with-icon i {
-            position: absolute;
-            left: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--luxury-gold);
-            font-size: 18px;
-            z-index: 1;
         }
 
         .form-control {
             width: 100%;
-            padding: 18px 20px 18px 55px;
+            padding: 15px;
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 10px;
             color: var(--text-light);
             font-size: 16px;
-            font-family: 'Montserrat', sans-serif;
             transition: all 0.3s ease;
         }
 
@@ -331,64 +106,11 @@
             outline: none;
             border-color: var(--luxury-gold);
             box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
-            background: rgba(212, 175, 55, 0.05);
         }
 
-        .password-toggle {
-            position: absolute;
-            right: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            cursor: pointer;
-            font-size: 18px;
-            transition: color 0.3s ease;
-        }
-
-        .password-toggle:hover {
-            color: var(--luxury-gold);
-        }
-
-        .form-options {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-            font-size: 14px;
-        }
-
-        .remember-me {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: var(--text-muted);
-            cursor: pointer;
-        }
-
-        .remember-me input[type="checkbox"] {
-            width: 16px;
-            height: 16px;
-            accent-color: var(--luxury-gold);
-            cursor: pointer;
-        }
-
-        .forgot-password {
-            color: var(--luxury-gold);
-            text-decoration: none;
-            transition: all 0.3s ease;
-        }
-
-        .forgot-password:hover {
-            color: var(--light-gold);
-            text-decoration: underline;
-        }
-
-        /* Login Button */
         .login-btn {
             width: 100%;
-            padding: 18px;
+            padding: 16px;
             background: linear-gradient(135deg, var(--luxury-gold), var(--deep-gold));
             border: none;
             border-radius: 10px;
@@ -397,50 +119,14 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            margin-bottom: 25px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            margin-top: 10px;
         }
 
         .login-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 10px 30px rgba(212, 175, 55, 0.3);
-            background: linear-gradient(135deg, var(--light-gold), var(--luxury-gold));
         }
 
-        .login-btn:disabled {
-            opacity: 0.7;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-
-        /* Divider */
-        .divider {
-            display: flex;
-            align-items: center;
-            margin: 30px 0;
-            color: var(--text-muted);
-            font-size: 14px;
-        }
-
-        .divider::before,
-        .divider::after {
-            content: '';
-            flex: 1;
-            height: 1px;
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .divider span {
-            padding: 0 15px;
-        }
-
-        /* Demo Credentials */
         .demo-credentials {
             background: rgba(212, 175, 55, 0.1);
             border: 1px solid rgba(212, 175, 55, 0.2);
@@ -462,17 +148,16 @@
             font-size: 18px;
         }
 
-        .credential-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-        }
-
         .credential {
             padding: 12px;
             background: rgba(255, 255, 255, 0.05);
             border-radius: 8px;
             border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 10px;
+        }
+
+        .credential:last-child {
+            margin-bottom: 0;
         }
 
         .credential .role {
@@ -484,342 +169,104 @@
         }
 
         .credential .email {
-            font-size: 12px;
+            font-size: 14px;
             color: var(--text-light);
             margin-bottom: 5px;
             word-break: break-all;
         }
 
         .credential .password {
-            font-size: 12px;
+            font-size: 14px;
             color: var(--text-muted);
             font-family: monospace;
         }
 
-        /* Footer */
-        .login-footer {
-            text-align: center;
-            margin-top: 40px;
-            padding-top: 20px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            color: var(--text-muted);
-            font-size: 12px;
+        .password-container {
+            position: relative;
         }
 
-        .login-footer a {
-            color: var(--luxury-gold);
-            text-decoration: none;
-            transition: color 0.3s ease;
-        }
-
-        .login-footer a:hover {
-            color: var(--light-gold);
-            text-decoration: underline;
-        }
-
-        /* Alert */
-        .alert {
-            padding: 15px 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            animation: slideDown 0.3s ease;
-        }
-
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .alert-success {
-            background: rgba(40, 167, 69, 0.1);
-            border: 1px solid rgba(40, 167, 69, 0.2);
-            color: #28a745;
-        }
-
-        .alert-danger {
-            background: rgba(220, 53, 69, 0.1);
-            border: 1px solid rgba(220, 53, 69, 0.2);
-            color: #dc3545;
-        }
-
-        .alert-warning {
-            background: rgba(255, 193, 7, 0.1);
-            border: 1px solid rgba(255, 193, 7, 0.2);
-            color: #ffc107;
-        }
-
-        .alert-info {
-            background: rgba(23, 162, 184, 0.1);
-            border: 1px solid rgba(23, 162, 184, 0.2);
-            color: #17a2b8;
-        }
-
-        .alert .close {
+        .password-toggle {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
             background: none;
             border: none;
-            color: inherit;
-            font-size: 20px;
+            color: var(--text-muted);
             cursor: pointer;
-            padding: 0;
-            width: 24px;
-            height: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            transition: background 0.3s ease;
-        }
-
-        .alert .close:hover {
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        /* Responsive Design */
-        @media (max-width: 992px) {
-            .login-container {
-                flex-direction: column;
-                max-width: 500px;
-                min-height: auto;
-            }
-
-            .brand-side {
-                padding: 40px;
-            }
-
-            .login-side {
-                padding: 40px;
-            }
-
-            .brand-quote h2 {
-                font-size: 28px;
-            }
-
-            .credential-grid {
-                grid-template-columns: 1fr;
-            }
+            font-size: 18px;
         }
 
         @media (max-width: 576px) {
             .login-container {
-                border-radius: 0;
-                min-height: 100vh;
-            }
-
-            .brand-side,
-            .login-side {
                 padding: 30px;
             }
-
-            .logo {
-                flex-direction: column;
-                text-align: center;
-                gap: 15px;
+            
+            .logo-img {
+                width: 80px;
+                height: 80px;
             }
-
-            .brand-quote h2 {
+            
+            .logo-header h1 {
                 font-size: 24px;
             }
-
-            .brand-features {
-                grid-template-columns: 1fr;
-            }
-
-            .form-options {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 15px;
-            }
-        }
-
-        /* Loading Spinner */
-        .spinner {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top-color: #ffffff;
-            animation: spin 1s ease-in-out infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        /* Security Badge */
-        .security-badge {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 15px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 8px;
-            border: 1px solid rgba(212, 175, 55, 0.2);
-            font-size: 12px;
-            color: var(--text-muted);
-        }
-
-        .security-badge i {
-            color: var(--luxury-gold);
-            font-size: 14px;
         }
     </style>
 </head>
 <body>
-    <!-- Background Pattern -->
-    <div class="bg-pattern"></div>
-    
-    <!-- Floating Jewellery Elements -->
-    <div class="floating-gem"></div>
-    <div class="floating-gem"></div>
-    <div class="floating-gem"></div>
-    
-    <!-- Login Container -->
     <div class="login-container">
-        <!-- Left Side - Branding -->
-        <div class="brand-side">
-            <div class="brand-content">
-                <div class="logo">
-                    <div class="logo-icon">
-                        <img src="logo.png" alt="Shri Mahakaleshwar Jewellers Logo">
-                    </div>
-                    <div class="logo-text">
-                        <h1>Shri Mahakaleshwar Jewellers</h1>
-                        <p>Since 1985</p>
-                    </div>
-                </div>
-                
-                <div class="brand-quote">
-                    <h2>Where Tradition Meets Elegance</h2>
-                    <p>For over three decades, we've been crafting timeless pieces that tell stories. Now, experience our legacy through our state-of-the-art digital platform.</p>
-                </div>
-                
-                <div class="brand-features">
-                    <div class="feature">
-                        <i class="fas fa-shield-alt"></i>
-                        <span>Bank-Level Security</span>
-                    </div>
-                    <div class="feature">
-                        <i class="fas fa-bolt"></i>
-                        <span>Lightning Fast Billing</span>
-                    </div>
-                    <div class="feature">
-                        <i class="fas fa-chart-line"></i>
-                        <span>AI Business Insights</span>
-                    </div>
-                    <div class="feature">
-                        <i class="fas fa-qrcode"></i>
-                        <span>Digital Verification</span>
-                    </div>
-                    <div class="feature">
-                        <i class="fas fa-exchange-alt"></i>
-                        <span>Smart Exchange System</span>
-                    </div>
-                    <div class="feature">
-                        <i class="fas fa-print"></i>
-                        <span>Professional Invoices</span>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="security-badge">
-                <i class="fas fa-lock"></i>
-                <span>256-bit SSL Encrypted</span>
-            </div>
+        <!-- Logo -->
+        <div class="logo-header">
+            <img src="logo.png" alt="Shri Mahakaleshwar Jewellers" class="logo-img">
+            <h1>Shri Mahakaleshwar Jewellers</h1>
+            <p>Premium Billing System</p>
         </div>
         
-        <!-- Right Side - Login Form -->
-        <div class="login-side">
-            <!-- Alert Container -->
-            <div id="alertContainer"></div>
-            
-            <div class="login-header">
-                <h2>Welcome Back</h2>
-                <p>Sign in to access your business dashboard</p>
+        <!-- Login Form -->
+        <form id="loginForm" class="login-form">
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" class="form-control" 
+                       placeholder="Enter your email" required>
             </div>
             
-            <form id="loginForm" class="login-form">
-                <div class="form-group">
-                    <label for="email">Email Address</label>
-                    <div class="input-with-icon">
-                        <i class="fas fa-envelope"></i>
-                        <input type="email" id="email" class="form-control" 
-                               placeholder="Enter your registered email" required>
-                    </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <div class="password-container">
+                    <input type="password" id="password" class="form-control" 
+                           placeholder="Enter your password" required>
+                    <button type="button" class="password-toggle" id="togglePassword">
+                        <i class="fas fa-eye"></i>
+                    </button>
                 </div>
-                
-                <div class="form-group">
-                    <label for="password">Password</label>
-                    <div class="input-with-icon">
-                        <i class="fas fa-lock"></i>
-                        <input type="password" id="password" class="form-control" 
-                               placeholder="Enter your password" required>
-                        <button type="button" class="password-toggle" id="togglePassword">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="form-options">
-                    <label class="remember-me">
-                        <input type="checkbox" id="rememberMe">
-                        <span>Remember me</span>
-                    </label>
-                    <a href="#" class="forgot-password">Forgot Password?</a>
-                </div>
-                
-                <button type="submit" id="loginBtn" class="login-btn">
-                    <span id="loginText">Sign In</span>
-                    <i class="fas fa-arrow-right"></i>
-                </button>
-                
-                <div class="divider">
-                    <span>OR TRY DEMO</span>
-                </div>
-                
-                <div class="demo-credentials">
-                    <h4><i class="fas fa-user-secret"></i> Demo Credentials</h4>
-                    <div class="credential-grid">
-                        <div class="credential">
-                            <div class="role">Administrator</div>
-                            <div class="email">admin@mahakaleshwar.com</div>
-                            <div class="password">admin123</div>
-                        </div>
-                        <div class="credential">
-                            <div class="role">Staff</div>
-                            <div class="email">staff@mahakaleshwar.com</div>
-                            <div class="password">staff123</div>
-                        </div>
-                        <div class="credential">
-                            <div class="role">Viewer</div>
-                            <div class="email">viewer@mahakaleshwar.com</div>
-                            <div class="password">viewer123</div>
-                        </div>
-                    </div>
-                </div>
-            </form>
+            </div>
             
-            <div class="login-footer">
-                <p>© 2024 Shri Mahakaleshwar Jewellers. All rights reserved.</p>
-                <p>Need help? <a href="mailto:support@mahakaleshwar.com">Contact Support</a> • v2.1.0</p>
+            <button type="submit" class="login-btn">
+                Sign In <i class="fas fa-arrow-right"></i>
+            </button>
+        </form>
+        
+        <!-- Demo Credentials -->
+        <div class="demo-credentials">
+            <h4><i class="fas fa-user-secret"></i> Demo Credentials</h4>
+            <div class="credential">
+                <div class="role">Administrator</div>
+                <div class="email">admin@mahakaleshwar.com</div>
+                <div class="password">admin123</div>
+            </div>
+            <div class="credential">
+                <div class="role">Staff</div>
+                <div class="email">staff@mahakaleshwar.com</div>
+                <div class="password">staff123</div>
+            </div>
+            <div class="credential">
+                <div class="role">Viewer</div>
+                <div class="email">viewer@mahakaleshwar.com</div>
+                <div class="password">viewer123</div>
             </div>
         </div>
     </div>
 
-    <!-- JavaScript -->
-    <script src="js/auth.js"></script>
     <script>
         // Password toggle functionality
         document.getElementById('togglePassword').addEventListener('click', function() {
@@ -845,154 +292,21 @@
                 
                 document.getElementById('email').value = email;
                 document.getElementById('password').value = password;
-                
-                // Show success message
-                showAlert('success', `Demo credentials loaded: ${email.split('@')[0]} role`);
             });
         });
 
-        // Remember me functionality
-        document.addEventListener('DOMContentLoaded', function() {
-            const rememberMe = localStorage.getItem('rememberMe');
-            const savedEmail = localStorage.getItem('savedEmail');
-            
-            if (rememberMe === 'true' && savedEmail) {
-                document.getElementById('email').value = savedEmail;
-                document.getElementById('rememberMe').checked = true;
-            }
-        });
-
-        // Enhanced login form submission
-        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+        // Login form submission
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
-            const rememberMe = document.getElementById('rememberMe').checked;
             
-            // Save email if remember me is checked
-            if (rememberMe) {
-                localStorage.setItem('savedEmail', email);
-                localStorage.setItem('rememberMe', 'true');
-            } else {
-                localStorage.removeItem('savedEmail');
-                localStorage.removeItem('rememberMe');
-            }
-            
-            // Show loading state
-            const loginBtn = document.getElementById('loginBtn');
-            const loginText = document.getElementById('loginText');
-            const originalText = loginText.textContent;
-            const originalHTML = loginBtn.innerHTML;
-            
-            loginBtn.disabled = true;
-            loginText.textContent = 'Authenticating...';
-            loginBtn.innerHTML = '<span class="spinner"></span> Authenticating...';
-            
-            try {
-                // Simulate network delay for better UX
-                await new Promise(resolve => setTimeout(resolve, 800));
-                
-                // Call auth login
-                const result = await window.auth.login(email, password);
-                
-                if (result.success) {
-                    showAlert('success', `Welcome back, ${result.user.name}! Redirecting...`);
-                    
-                    // Add slight delay before redirect for better UX
-                    setTimeout(() => {
-                        if (result.user.role === 'admin') {
-                            window.location.href = 'admin.html';
-                        } else {
-                            window.location.href = 'billing.html';
-                        }
-                    }, 1000);
-                } else {
-                    showAlert('danger', result.message || 'Invalid credentials. Please try again.');
-                    loginBtn.disabled = false;
-                    loginText.textContent = originalText;
-                    loginBtn.innerHTML = originalHTML;
-                }
-            } catch (error) {
-                console.error('Login error:', error);
-                showAlert('danger', 'Network error. Please check your connection and try again.');
-                loginBtn.disabled = false;
-                loginText.textContent = originalText;
-                loginBtn.innerHTML = originalHTML;
-            }
-        });
-
-        // Enhanced alert function
-        function showAlert(type, message) {
-            const alertDiv = document.createElement('div');
-            alertDiv.className = `alert alert-${type}`;
-            alertDiv.innerHTML = `
-                <div>
-                    <i class="fas fa-${getAlertIcon(type)}"></i>
-                    <span>${message}</span>
-                </div>
-                <button type="button" class="close" onclick="this.parentElement.remove()">
-                    &times;
-                </button>
-            `;
-            
-            const container = document.getElementById('alertContainer');
-            container.innerHTML = '';
-            container.appendChild(alertDiv);
-            
-            // Auto-remove after 5 seconds
-            setTimeout(() => {
-                if (alertDiv.parentNode) {
-                    alertDiv.remove();
-                }
-            }, 5000);
-        }
-
-        function getAlertIcon(type) {
-            const icons = {
-                'success': 'check-circle',
-                'danger': 'exclamation-circle',
-                'warning': 'exclamation-triangle',
-                'info': 'info-circle'
-            };
-            return icons[type] || 'info-circle';
-        }
-
-        // Forgot password functionality
-        document.querySelector('.forgot-password').addEventListener('click', function(e) {
-            e.preventDefault();
-            const email = document.getElementById('email').value || 'your email';
-            showAlert('info', `Password reset instructions will be sent to ${email} (Feature in development)`);
-        });
-
-        // Auto-check for existing session
-        document.addEventListener('DOMContentLoaded', function() {
-            if (window.auth.isAuthenticated()) {
-                const user = window.auth.getUser();
-                showAlert('info', `You're already logged in as ${user.name}. Redirecting...`);
-                
-                setTimeout(() => {
-                    if (user.role === 'admin') {
-                        window.location.href = 'admin.html';
-                    } else {
-                        window.location.href = 'billing.html';
-                    }
-                }, 1500);
-            }
-        });
-
-        // Keyboard shortcuts
-        document.addEventListener('keydown', function(e) {
-            // Ctrl+Enter to submit form
-            if (e.ctrlKey && e.key === 'Enter') {
-                document.getElementById('loginForm').dispatchEvent(new Event('submit'));
-            }
-            
-            // Escape to clear form
-            if (e.key === 'Escape') {
-                document.getElementById('email').value = '';
-                document.getElementById('password').value = '';
-                document.getElementById('email').focus();
+            // Simple validation
+            if (email && password) {
+                alert(`Login attempt for: ${email}\n(In a real system, this would authenticate)`);
+                // In a real app, you would authenticate here
+                // window.location.href = 'dashboard.html';
             }
         });
 
