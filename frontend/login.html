@@ -155,6 +155,14 @@
             font-size: 28px;
             color: var(--dark-bg);
             box-shadow: 0 10px 30px rgba(212, 175, 55, 0.3);
+            overflow: hidden; /* Added to ensure logo image stays within bounds */
+        }
+
+        .logo-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 50%;
         }
 
         .logo-text h1 {
@@ -685,7 +693,7 @@
             <div class="brand-content">
                 <div class="logo">
                     <div class="logo-icon">
-                        <i class="fas fa-gem"></i>
+                        <img src="logo.png" alt="Shri Mahakaleshwar Jewellers Logo">
                     </div>
                     <div class="logo-text">
                         <h1>Shri Mahakaleshwar Jewellers</h1>
