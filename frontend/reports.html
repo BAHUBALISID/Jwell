@@ -774,35 +774,40 @@
             showLoading();
             
             try {
-                let url = `http://localhost:5000/api/reports/`;
+                let endpoint = '';
                 let params = [];
                 
                 switch(currentReportType) {
                     case 'sales':
-                        url += 'sales';
+                        endpoint = 'sales';
                         break;
                     case 'ai':
-                        url += 'ai-analysis';
+                        endpoint = 'ai-analysis';
                         break;
                     case 'customer':
-                        url += 'customer';
+                        endpoint = 'customer';
                         break;
                     case 'gst':
-                        url += 'gst';
+                        endpoint = 'gst';
                         break;
                 }
                 
-                // Add parameters
-                if (timePeriod !== 'custom') {
-                    params.push(`timeFilter=${timePeriod}`);
-                } else if (startDate && endDate) {
-                    params.push(`startDate=${startDate}`);
-                    params.push(`endDate=${endDate}`);
+                // Add parameters based on report type
+                if (currentReportType === 'sales' || currentReportType === 'customer' || currentReportType === 'ai') {
+                    if (timePeriod !== 'custom' && timePeriod) {
+                        params.push(`timeFilter=${timePeriod}`);
+                    } else if (startDate && endDate) {
+                        params.push(`startDate=${startDate}`);
+                        params.push(`endDate=${endDate}`);
+                    }
+                    
+                    if (metalType) {
+                        params.push(`metalType=${metalType}`);
+                    }
                 }
                 
-                if (metalType) {
-                    params.push(`metalType=${metalType}`);
-                }
+                // Construct URL - FIXED: Using relative path
+                let url = `/api/reports/${endpoint}`;
                 
                 if (params.length > 0) {
                     url += '?' + params.join('&');
@@ -1176,7 +1181,8 @@
         // Load stock report
         async function loadStockReport() {
             try {
-                const response = await fetch('http://localhost:5000/api/reports/stock', {
+                // FIXED: Using relative path
+                const response = await fetch('/api/reports/stock', {
                     headers: {
                         'Authorization': `Bearer ${window.auth.getToken()}`
                     }
@@ -1278,7 +1284,6 @@
         
         // Show loading
         function showLoading() {
-            // Implement loading indicator
             const btn = document.getElementById('generateReportBtn');
             const originalText = btn.innerHTML;
             btn.innerHTML = '<span class="spinner"></span> Generating...';
