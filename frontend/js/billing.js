@@ -265,6 +265,18 @@ class BillingSystem {
                 position: relative !important;
                 z-index: 1 !important;
                 background-color: white !important;
+                padding-right: 30px !important;
+                background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e") !important;
+                background-repeat: no-repeat !important;
+                background-position: right 10px center !important;
+                background-size: 16px !important;
+                -webkit-appearance: menulist !important;
+                appearance: auto !important;
+            }
+            
+            select:focus {
+                border-color: var(--primary-gold) !important;
+                box-shadow: 0 0 0 0.2rem rgba(212, 175, 55, 0.25) !important;
             }
             
             @media screen and (-webkit-min-device-pixel-ratio:0) {
@@ -280,6 +292,10 @@ class BillingSystem {
             .item-row select {
                 width: 100% !important;
                 margin: 5px 0 !important;
+            }
+            
+            .item-row input {
+                font-size: 14px !important;
             }
             
             .gst-input-group select {
@@ -374,37 +390,38 @@ class BillingSystem {
         if (isExchange) {
             itemRow.innerHTML = `
                 <div data-label="Description">
-                    <input type="text" class="form-control" placeholder="Description (optional)" 
+                    <input type="text" class="form-control" placeholder="Description" 
                            oninput="window.billingSystem.handleItemInput('${itemId}', 'description', this.value, true)">
                 </div>
                 <div data-label="Metal">
                     <select class="form-control metal-type" 
                             onchange="window.billingSystem.handleMetalChange('${itemId}', this.value, true)">
-                        <option value="">Select Metal *</option>
+                        <option value="">Metal *</option>
                         ${metalOptions}
                     </select>
                 </div>
                 <div data-label="Purity">
                     <select class="form-control purity" 
                             onchange="window.billingSystem.handleItemInput('${itemId}', 'purity', this.value, true)">
-                        <option value="">Select Purity *</option>
+                        <option value="">Purity *</option>
                     </select>
                 </div>
-                <div data-label="Weight">
+                <div data-label="Weight (g)">
                     <input type="number" class="form-control" step="0.001" placeholder="Weight *" 
                            oninput="window.billingSystem.handleItemInput('${itemId}', 'weight', this.value, true)">
                 </div>
                 <div data-label="Wastage %">
-                    <input type="number" class="form-control" step="0.1" placeholder="Wastage % (optional)" 
+                    <input type="number" class="form-control" step="0.1" placeholder="Wastage %" 
                            oninput="window.billingSystem.handleItemInput('${itemId}', 'wastageDeduction', this.value, true)">
                 </div>
                 <div data-label="Melting Charges">
-                    <input type="number" class="form-control" step="0.01" placeholder="Melting Charges (optional)" 
+                    <input type="number" class="form-control" step="0.01" placeholder="Melting Charges" 
                            oninput="window.billingSystem.handleItemInput('${itemId}', 'meltingCharges', this.value, true)">
                 </div>
-                <div>
+                <div style="align-self: center;">
                     <button class="btn btn-danger btn-sm" type="button"
-                            onclick="window.billingSystem.removeItem('${itemId}', true)">
+                            onclick="window.billingSystem.removeItem('${itemId}', true)"
+                            style="min-width: 45px; min-height: 45px;">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
@@ -424,20 +441,20 @@ class BillingSystem {
         } else {
             itemRow.innerHTML = `
                 <div data-label="Description">
-                    <input type="text" class="form-control" placeholder="Description (optional)" 
+                    <input type="text" class="form-control" placeholder="Description" 
                            oninput="window.billingSystem.handleItemInput('${itemId}', 'description', this.value, false)">
                 </div>
                 <div data-label="Metal">
                     <select class="form-control metal-type" 
                             onchange="window.billingSystem.handleMetalChange('${itemId}', this.value, false)">
-                        <option value="">Select Metal *</option>
+                        <option value="">Metal *</option>
                         ${metalOptions}
                     </select>
                 </div>
                 <div data-label="Purity">
                     <select class="form-control purity" 
                             onchange="window.billingSystem.handleItemInput('${itemId}', 'purity', this.value, false)">
-                        <option value="">Select Purity *</option>
+                        <option value="">Purity *</option>
                     </select>
                 </div>
                 <div data-label="Unit">
@@ -451,19 +468,19 @@ class BillingSystem {
                     <input type="number" class="form-control quantity" step="1" placeholder="Qty" value="1"
                            oninput="window.billingSystem.handleItemInput('${itemId}', 'quantity', this.value, false)">
                 </div>
-                <div data-label="Gross Weight">
-                    <input type="number" class="form-control gross-weight" step="0.001" placeholder="Gross Wt (g)" 
+                <div data-label="Gross Wt (g)">
+                    <input type="number" class="form-control gross-weight" step="0.001" placeholder="Gross Wt" 
                            oninput="window.billingSystem.handleWeightUpdate('${itemId}', this, 'grossWeight')">
                 </div>
-                <div data-label="Less Weight">
-                    <input type="number" class="form-control less-weight" step="0.001" placeholder="Less Wt (g)" 
+                <div data-label="Less Wt (g)">
+                    <input type="number" class="form-control less-weight" step="0.001" placeholder="Less Wt" 
                            oninput="window.billingSystem.handleWeightUpdate('${itemId}', this, 'lessWeight')">
                 </div>
-                <div data-label="Net Weight">
-                    <input type="number" class="form-control net-weight" step="0.001" placeholder="Net Wt (g) *" readonly
-                           oninput="window.billingSystem.handleItemInput('${itemId}', 'weight', this.value, false)">
+                <div data-label="Net Wt (g)">
+                    <input type="number" class="form-control net-weight" step="0.001" placeholder="Net Wt *" readonly
+                       oninput="window.billingSystem.handleItemInput('${itemId}', 'weight', this.value, false)">
                 </div>
-                <div data-label="Rate">
+                <div data-label="Rate/g">
                     <input type="number" class="form-control rate" step="0.01" placeholder="Rate/g" 
                            oninput="window.billingSystem.handleItemInput('${itemId}', 'rate', this.value, false)">
                 </div>
@@ -476,24 +493,21 @@ class BillingSystem {
                     </select>
                 </div>
                 <div data-label="Making Charges">
-                    <input type="number" class="form-control making-charges" step="0.01" placeholder="Making Charges *" 
+                    <input type="number" class="form-control making-charges" step="0.01" placeholder="Making *" 
                            oninput="window.billingSystem.handleItemInput('${itemId}', 'makingCharges', this.value, false)">
                 </div>
-                <div data-label="Discount on Making">
-                    <input type="number" class="form-control making-discount" step="0.01" placeholder="Disc. on Making %" 
+                <div data-label="Disc. on Making %">
+                    <input type="number" class="form-control making-discount" step="0.01" placeholder="Disc %" 
                            oninput="window.billingSystem.handleItemInput('${itemId}', 'makingChargesDiscount', this.value, false)">
                 </div>
                 <div data-label="HUID/Hallmark">
-                    <input type="text" class="form-control huid" placeholder="HUID/Hallmark" 
+                    <input type="text" class="form-control huid" placeholder="HUID" 
                            oninput="window.billingSystem.handleItemInput('${itemId}', 'huid', this.value, false)">
                 </div>
-                <div data-label="Tunch">
-                    <input type="text" class="form-control tunch" placeholder="Tunch" 
-                           oninput="window.billingSystem.handleItemInput('${itemId}', 'tunch', this.value, false)">
-                </div>
-                <div>
+                <div style="align-self: center;">
                     <button class="btn btn-danger btn-sm" type="button"
-                            onclick="window.billingSystem.removeItem('${itemId}', false)">
+                            onclick="window.billingSystem.removeItem('${itemId}', false)"
+                            style="min-width: 45px; min-height: 45px;">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
@@ -519,7 +533,35 @@ class BillingSystem {
         }
         
         container.appendChild(itemRow);
-        this.updateResponsiveLayout();
+        
+        // Update grid layout for this row
+        this.updateItemRowLayout(itemRow);
+    }
+
+    updateItemRowLayout(row) {
+        const screenWidth = window.innerWidth;
+        
+        if (screenWidth < 768) {
+            row.style.gridTemplateColumns = '1fr';
+        } else if (screenWidth < 992) {
+            if (row.classList.contains('exchange-row')) {
+                row.style.gridTemplateColumns = 'repeat(3, 1fr)';
+            } else {
+                row.style.gridTemplateColumns = 'repeat(4, 1fr)';
+            }
+        } else if (screenWidth < 1200) {
+            if (row.classList.contains('exchange-row')) {
+                row.style.gridTemplateColumns = 'repeat(4, 1fr)';
+            } else {
+                row.style.gridTemplateColumns = 'repeat(5, 1fr)';
+            }
+        } else {
+            if (row.classList.contains('exchange-row')) {
+                row.style.gridTemplateColumns = 'repeat(4, 1fr)';
+            } else {
+                row.style.gridTemplateColumns = 'repeat(6, 1fr)';
+            }
+        }
     }
 
     handleMetalChange(itemId, metalType, isExchange) {
@@ -631,24 +673,8 @@ class BillingSystem {
 
     updateResponsiveLayout() {
         const itemRows = document.querySelectorAll('.item-row');
-        const screenWidth = window.innerWidth;
-        
         itemRows.forEach(row => {
-            if (screenWidth < 768) {
-                row.style.gridTemplateColumns = '1fr';
-            } else if (screenWidth < 1024) {
-                if (row.classList.contains('exchange-row')) {
-                    row.style.gridTemplateColumns = 'repeat(3, 1fr)';
-                } else {
-                    row.style.gridTemplateColumns = 'repeat(4, 1fr)';
-                }
-            } else {
-                if (row.classList.contains('exchange-row')) {
-                    row.style.gridTemplateColumns = '2fr 1fr 1fr 1fr 1fr 1fr 1fr auto';
-                } else {
-                    row.style.gridTemplateColumns = '2fr 1fr 1fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr auto';
-                }
-            }
+            this.updateItemRowLayout(row);
         });
     }
 
@@ -951,7 +977,6 @@ class BillingSystem {
             const rateInput = itemRow.querySelector('.rate');
             const makingDiscountInput = itemRow.querySelector('.making-discount');
             const huidInput = itemRow.querySelector('.huid');
-            const tunchInput = itemRow.querySelector('.tunch');
             
             // Update item data from form fields
             if (metalTypeSelect) {
@@ -1000,10 +1025,6 @@ class BillingSystem {
             
             if (huidInput) {
                 item.huid = huidInput.value;
-            }
-            
-            if (tunchInput) {
-                item.tunch = tunchInput.value;
             }
             
             // Now validate
@@ -1088,7 +1109,6 @@ class BillingSystem {
                 const makingChargesTypeSelect = itemRow.querySelector('.making-charges-type');
                 const makingDiscountInput = itemRow.querySelector('.making-discount');
                 const huidInput = itemRow.querySelector('.huid');
-                const tunchInput = itemRow.querySelector('.tunch');
                 
                 const itemData = {
                     description: item.description || '',
@@ -1104,7 +1124,7 @@ class BillingSystem {
                     makingChargesType: makingChargesTypeSelect ? makingChargesTypeSelect.value : item.makingChargesType || 'percentage',
                     makingChargesDiscount: makingDiscountInput ? parseFloat(makingDiscountInput.value) || 0 : item.makingChargesDiscount,
                     huid: huidInput ? huidInput.value : item.huid || '',
-                    tunch: tunchInput ? tunchInput.value : item.tunch || ''
+                    tunch: item.tunch || ''
                 };
                 
                 if (!['percentage', 'fixed', 'GRM'].includes(itemData.makingChargesType)) {
